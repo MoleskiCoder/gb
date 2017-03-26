@@ -16,7 +16,6 @@ packages/
 *~
 
 *.bin
-*.rom
 
 # Compiled Object files
 *.slo
