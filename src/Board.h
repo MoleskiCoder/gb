@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include "Z80.h"
 #include "Profiler.h"
+#include "Disassembler.h"
 #include "EventArgs.h"
 
 class Board {
@@ -30,6 +31,7 @@ private:
 	InputOutput m_ports;
 	Z80 m_cpu;
 	Profiler m_profiler;
+	Disassembler m_disassembler;
 
 	void Cpu_ExecutingInstruction_Cpm(const CpuEventArgs& cpuEvent);
 

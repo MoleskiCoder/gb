@@ -10,6 +10,8 @@
 #include "StatusFlags.h"
 
 Disassembler::Disassembler() {
+	// Disable exceptions where too many format arguments are available
+	m_formatter.exceptions(boost::io::all_error_bits ^ boost::io::too_many_args_bit);
 }
 
 std::string Disassembler::state(const Z80& cpu) {
@@ -43,12 +45,15 @@ std::string Disassembler::state(const Z80& cpu) {
 	return output.str();
 }
 
-std::string Disassembler::disassemble(const Z80& cpu) {
+std::string Disassembler::disassemble(const Z80& cpu) const {
 
 	const auto& memory = cpu.getMemory();
 	auto pc = cpu.getProgramCounter();
 	auto opcode = memory.get(pc);
 	const auto& instruction = cpu.getInstructions()[opcode];
+
+	auto immediate = memory.get(pc + 1);
+	auto absolute = memory.getWord(pc + 1);
 
 	std::ostringstream output;
 
@@ -58,31 +63,18 @@ std::string Disassembler::disassemble(const Z80& cpu) {
 	// hex raw operand
 	switch (instruction.mode) {
 	case Z80::Immediate:
-		output << hex(memory.get(pc + 1));
+		output << hex(immediate);
 		break;
 	case Z80::Absolute:
-		output << hex(memory.get(pc + 1));
-		output << hex(memory.get(pc + 2));
+		output << hex(absolute);
 		break;
 	default:
 		break;
 	}
 	output << "\t";
 
-	// base disassembly
-	output << instruction.disassembly;
-
-	// disassembly operand
-	switch (instruction.mode) {
-	case Z80::Immediate:
-		output << hex(memory.get(pc + 1));
-		break;
-	case Z80::Absolute:
-		output << hex(memory.getWord(pc + 1));
-		break;
-	default:
-		break;
-	}
+	m_formatter.parse(instruction.disassembly);
+	output << m_formatter % (int)immediate % (int)absolute;
 
 	return output.str();
 }

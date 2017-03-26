@@ -18,6 +18,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <boost/format.hpp>
+
 #include <SDL.h>
 
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN

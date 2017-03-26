@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "Board.h"
-#include "Disassembler.h"
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
@@ -89,6 +88,6 @@ void Board::Cpu_ExecutingInstruction_Debug(const CpuEventArgs& cpuEvent) {
 	std::cerr
 		<< Disassembler::state(cpuEvent.getCpu())
 		<< "\t"
-		<< Disassembler::disassemble(cpuEvent.getCpu())
+		<< m_disassembler.disassemble(cpuEvent.getCpu())
 		<< '\n';
 }
