@@ -66,7 +66,8 @@ std::string Disassembler::disassemble(const Z80& cpu) const {
 		output << hex(immediate);
 		break;
 	case Z80::Absolute:
-		output << hex(absolute);
+		output << hex(memory.get(pc + 1));
+		output << hex(memory.get(pc + 2));
 		break;
 	default:
 		break;
