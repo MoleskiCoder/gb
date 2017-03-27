@@ -105,14 +105,21 @@ private:
 	uint16_t sp;
 
 	uint8_t a;
+	uint8_t a_alt;
 	StatusFlags f;
+	StatusFlags f_alt;
 
 	uint8_t iv;
 	int m_interruptMode;
 
 	register16_t bc;
+	register16_t bc_alt;
+
 	register16_t de;
+	register16_t de_alt;
+
 	register16_t hl;
+	register16_t hl_alt;
 
 	bool m_interrupt;
 	bool m_halted;
@@ -178,6 +185,7 @@ private:
 	Instruction UNKNOWN();
 
 	void installInstructions();
+	void installInstructionsDD();
 	void installInstructionsED();
 
 	//
@@ -450,19 +458,19 @@ private:
 	// jump
 
 	void jmp() { jmpConditional(true); }
-	
+
 	void jc() { jmpConditional(f.C); }
 	void jnc() { jmpConditional(!f.C); }
-	
+
 	void jz() { jmpConditional(f.Z); }
 	void jnz() { jmpConditional(!f.Z); }
-	
+
 	void jpe() { jmpConditional(f.P); }
 	void jpo() { jmpConditional(!f.P); }
-	
+
 	void jm() { jmpConditional(f.S); }
 	void jp() { jmpConditional(!f.S); }
-	
+
 	void pchl() {
 		pc = hl.word;
 	}
@@ -478,7 +486,7 @@ private:
 	void cnc() { callConditional(!f.C); }
 
 	void cpe() { callConditional(f.P); }
-	void cpo() { callConditional(!f.P);  }
+	void cpo() { callConditional(!f.P); }
 
 	void cz() { callConditional(f.Z); }
 	void cnz() { callConditional(!f.Z); }
@@ -688,7 +696,7 @@ private:
 		compare(value);
 	}
 
-	void cpi() { compare(fetchByte());	}
+	void cpi() { compare(fetchByte()); }
 
 	// rotate
 
@@ -775,6 +783,12 @@ private:
 
 	// extended ed range
 
+	void dd() {
+		auto surrogate = fetchByte();
+		auto instruction = extendedInstructions[0xdd][surrogate];
+		execute(instruction);
+	}
+
 	void ed() {
 		auto surrogate = fetchByte();
 		auto instruction = extendedInstructions[0xed][surrogate];
@@ -803,5 +817,18 @@ private:
 
 	void ld_i_a() {
 		iv = a;
+	}
+
+	// alternate register set
+
+	void ex_af_afa() {
+		std::swap(a, a_alt);
+		std::swap(f, f_alt);
+	}
+
+	void exx() {
+		std::swap(bc, bc_alt);
+		std::swap(de, de_alt);
+		std::swap(hl, hl_alt);
 	}
 };

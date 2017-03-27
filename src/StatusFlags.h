@@ -19,7 +19,7 @@ struct StatusFlags {
 		Carry = 0x1,				// S
 	};
 
-	StatusFlags(uint8_t value) {
+	StatusFlags(uint8_t value = 0) {
 		S = (value & StatusBits::Sign) != 0;
 		Z = (value & StatusBits::Zero) != 0;
 		AC = (value & StatusBits::AuxiliaryCarry) != 0;
