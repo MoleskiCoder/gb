@@ -47,21 +47,30 @@ std::string Disassembler::state(const Z80& cpu) {
 
 std::string Disassembler::disassemble(const Z80& cpu) const {
 
+	std::ostringstream output;
+
 	const auto& memory = cpu.getMemory();
 	auto pc = cpu.getProgramCounter();
 	auto opcode = memory.get(pc);
-	const auto& instruction = cpu.getInstructions()[opcode];
-
-	auto immediate = memory.get(pc + 1);
-	auto absolute = memory.getWord(pc + 1);
-
-	std::ostringstream output;
 
 	// hex opcode
 	output << hex(opcode);
 
+	auto instruction = cpu.getInstructions()[opcode];
+	auto isExtended = cpu.hasExtendedInstructions(opcode);
+	if (isExtended) {
+		opcode = memory.get(++pc);
+		instruction = cpu.getInstructions()[opcode];
+		output << hex(opcode);
+	}
+
+	auto immediate = memory.get(pc + 1);
+	auto absolute = memory.getWord(pc + 1);
+	auto relative = pc + (int8_t)immediate + 2;
+
 	// hex raw operand
 	switch (instruction.mode) {
+	case Z80::Relative:
 	case Z80::Immediate:
 		output << hex(immediate);
 		break;
@@ -75,7 +84,7 @@ std::string Disassembler::disassemble(const Z80& cpu) const {
 	output << "\t";
 
 	m_formatter.parse(instruction.disassembly);
-	output << m_formatter % (int)immediate % (int)absolute;
+	output << m_formatter % (int)immediate % (int)absolute % relative;
 
 	return output.str();
 }

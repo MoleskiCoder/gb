@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <array>
 #include <functional>
+#include <map>
 
 #include "Memory.h"
 #include "StatusFlags.h"
@@ -48,7 +49,10 @@ public:
 
 	Signal<CpuEventArgs> ExecutingInstruction;
 
-	const std::array<Instruction, 0x100>& getInstructions() const { return instructions;  }
+	const std::array<Instruction, 0x100>& getInstructions() const { return instructions; }
+	const std::array<Instruction, 0x100>& getExtendedInstructions(uint8_t surrogate) const { return extendedInstructions.find(surrogate)->second; }
+	bool hasExtendedInstructions(uint8_t surrogate) const { return extendedInstructions.find(surrogate) != extendedInstructions.cend(); }
+
 	const Memory& getMemory() const { return m_memory; }
 
 	uint16_t getProgramCounter() const { return pc; }
@@ -87,7 +91,7 @@ public:
 
 private:
 	std::array<Instruction, 0x100> instructions;
-	std::array<Instruction, 0x100> instructionsED;
+	std::map<uint8_t, std::array<Instruction, 0x100>> extendedInstructions;
 
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
@@ -773,7 +777,7 @@ private:
 
 	void ed() {
 		auto surrogate = fetchByte();
-		auto instruction = instructionsED[surrogate];
+		auto instruction = extendedInstructions[0xed][surrogate];
 		execute(instruction);
 	}
 
