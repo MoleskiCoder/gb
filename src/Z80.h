@@ -33,6 +33,7 @@ public:
 		Unknown,
 		Implied,	// zero bytes
 		Immediate,	// single byte
+		Relative,	// single byte, relative to pc
 		Absolute	// two bytes, little endian
 	};
 
@@ -86,6 +87,7 @@ public:
 
 private:
 	std::array<Instruction, 0x100> instructions;
+	std::array<Instruction, 0x100> instructionsED;
 
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
@@ -101,12 +103,20 @@ private:
 	uint8_t a;
 	StatusFlags f;
 
+	uint8_t iv;
+	int m_interruptMode;
+
 	register16_t bc;
 	register16_t de;
 	register16_t hl;
 
 	bool m_interrupt;
 	bool m_halted;
+
+	void execute(const Instruction& instruction) {
+		instruction.vector();
+		cycles += instruction.count;
+	}
 
 	void adjustSign(uint8_t value) { f.S = ((value & 0x80) != 0); }
 	void adjustZero(uint8_t value) { f.Z = (value == 0); }
@@ -164,6 +174,7 @@ private:
 	Instruction UNKNOWN();
 
 	void installInstructions();
+	void installInstructionsED();
 
 	//
 
@@ -205,6 +216,14 @@ private:
 		auto destination = fetchWord();
 		if (conditional)
 			pc = destination;
+	}
+
+	void jrConditional(int conditional) {
+		auto offset = (int8_t)fetchByte();
+		if (conditional) {
+			pc += offset;
+			cycles += 5;
+		}
 	}
 
 	void anda(uint8_t value) {
@@ -746,5 +765,39 @@ private:
 
 	void hlt() {
 		m_halted = true;
+	}
+
+	// Z80 instructions
+
+	// extended ed range
+
+	void ed() {
+		auto surrogate = fetchByte();
+		auto instruction = instructionsED[surrogate];
+		execute(instruction);
+	}
+
+	// jr jump relative
+
+	void jrz() { jrConditional(f.Z); }
+	void jrnz() { jrConditional(!f.Z); }
+
+	void jrc() { jrConditional(f.C); }
+	void jrnc() { jrConditional(!f.C); }
+
+	// 16 bit subtraction
+
+	void sbc_hl_bc() {
+		auto subtraction = hl.word - bc.word - f.C;
+		hl.word = subtraction;
+		adjustSign(hl.high);
+		f.Z = (hl.word == 0);
+		f.P = subtraction > 0x10000;
+	}
+
+	// interrupt vector
+
+	void ld_i_a() {
+		iv = a;
 	}
 };
