@@ -67,6 +67,9 @@ public:
 	const register16_t& getDE() const { return de; }
 	const register16_t& getHL() const { return hl; }
 
+	const register16_t& getIX() const { return ix; }
+	const register16_t& getIY() const { return iy; }
+
 	bool isInterruptable() const {
 		return m_interrupt;
 	}
@@ -121,6 +124,9 @@ private:
 	register16_t hl;
 	register16_t hl_alt;
 
+	register16_t ix;
+	register16_t iy;
+
 	bool m_interrupt;
 	bool m_halted;
 
@@ -135,7 +141,7 @@ private:
 	void adjustParity(uint8_t value) {
 		static const uint8_t lookup[0x10] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
 		auto set = (lookup[value >> 4] + lookup[value & 0xF]);
-		f.P = (set % 2) == 0;
+		f.PV = (set % 2) == 0;
 	}
 
 	void adjustSZP(uint8_t value) {
@@ -144,28 +150,28 @@ private:
 		adjustParity(value);
 	}
 
-	int buildAuxiliaryCarryIndex(uint8_t value, int calculation) {
+	int buildHalfCarryIndex(uint8_t value, int calculation) {
 		return ((a & 0x88) >> 1) | ((value & 0x88) >> 2) | ((calculation & 0x88) >> 3);
 	}
 
-	void adjustAuxiliaryCarryAdd(uint8_t value, int calculation) {
-		auto index = buildAuxiliaryCarryIndex(value, calculation);
-		f.AC = m_halfCarryTableAdd[index & 0x7];
+	void adjustHalfCarryAdd(uint8_t value, int calculation) {
+		auto index = buildHalfCarryIndex(value, calculation);
+		f.HC = m_halfCarryTableAdd[index & 0x7];
 	}
 
 	void adjustAuxiliaryCarrySub(uint8_t value, int calculation) {
-		auto index = buildAuxiliaryCarryIndex(value, calculation);
-		f.AC = !m_halfCarryTableSub[index & 0x7];
+		auto index = buildHalfCarryIndex(value, calculation);
+		f.HC = !m_halfCarryTableSub[index & 0x7];
 	}
 
 	void postIncrement(uint8_t value) {
 		adjustSZP(value);
-		f.AC = (value & 0x0f) == 0;
+		f.HC = (value & 0x0f) == 0;
 	}
 
 	void postDecrement(uint8_t value) {
 		adjustSZP(value);
-		f.AC = (value & 0x0f) != 0xf;
+		f.HC = (value & 0x0f) != 0xf;
 	}
 
 	void pushWord(uint16_t value);
@@ -187,6 +193,7 @@ private:
 	void installInstructions();
 	void installInstructionsDD();
 	void installInstructionsED();
+	void installInstructionsFD();
 
 	//
 
@@ -239,18 +246,18 @@ private:
 	}
 
 	void anda(uint8_t value) {
-		f.AC = (((a | value) & 0x8) != 0);
+		f.HC = (((a | value) & 0x8) != 0);
 		f.C = false;
 		adjustSZP(a &= value);
 	}
 
 	void ora(uint8_t value) {
-		f.AC = f.C = false;
+		f.HC = f.C = false;
 		adjustSZP(a |= value);
 	}
 
 	void xra(uint8_t value) {
-		f.AC = f.C = false;
+		f.HC = f.C = false;
 		adjustSZP(a ^= value);
 	}
 
@@ -259,7 +266,7 @@ private:
 		a = Memory::lowByte(sum);
 		f.C = sum > 0xff;
 		adjustSZP(a);
-		adjustAuxiliaryCarryAdd(value, sum);
+		adjustHalfCarryAdd(value, sum);
 	}
 
 	void adc(uint8_t value) {
@@ -465,8 +472,8 @@ private:
 	void jz() { jmpConditional(f.Z); }
 	void jnz() { jmpConditional(!f.Z); }
 
-	void jpe() { jmpConditional(f.P); }
-	void jpo() { jmpConditional(!f.P); }
+	void jpe() { jmpConditional(f.PV); }
+	void jpo() { jmpConditional(!f.PV); }
 
 	void jm() { jmpConditional(f.S); }
 	void jp() { jmpConditional(!f.S); }
@@ -485,8 +492,8 @@ private:
 	void cc() { callConditional(f.C); }
 	void cnc() { callConditional(!f.C); }
 
-	void cpe() { callConditional(f.P); }
-	void cpo() { callConditional(!f.P); }
+	void cpe() { callConditional(f.PV); }
+	void cpo() { callConditional(!f.PV); }
 
 	void cz() { callConditional(f.Z); }
 	void cnz() { callConditional(!f.Z); }
@@ -506,8 +513,8 @@ private:
 	void rz() { returnConditional(f.Z); }
 	void rnz() { returnConditional(!f.Z); }
 
-	void rpe() { returnConditional(f.P); }
-	void rpo() { returnConditional(!f.P); }
+	void rpe() { returnConditional(f.PV); }
+	void rpo() { returnConditional(!f.PV); }
 
 	void rm() { returnConditional(f.S); }
 	void rp() { returnConditional(!f.S); }
@@ -745,7 +752,7 @@ private:
 	void daa() {
 		auto carry = f.C;
 		uint8_t addition = 0;
-		if (f.AC || (a & 0xf) > 9) {
+		if (f.HC || (a & 0xf) > 9) {
 			addition = 0x6;
 		}
 		if (f.C || (a >> 4) > 9 || ((a >> 4) >= 9 && (a & 0xf) > 9)) {
@@ -781,20 +788,6 @@ private:
 
 	// Z80 instructions
 
-	// extended ed range
-
-	void dd() {
-		auto surrogate = fetchByte();
-		auto instruction = extendedInstructions[0xdd][surrogate];
-		execute(instruction);
-	}
-
-	void ed() {
-		auto surrogate = fetchByte();
-		auto instruction = extendedInstructions[0xed][surrogate];
-		execute(instruction);
-	}
-
 	// jr jump relative
 
 	void jrz() { jrConditional(f.Z); }
@@ -810,7 +803,7 @@ private:
 		hl.word = subtraction;
 		adjustSign(hl.high);
 		f.Z = (hl.word == 0);
-		f.P = subtraction > 0x10000;
+		f.PV = subtraction > 0x10000;
 	}
 
 	// interrupt vector
@@ -831,4 +824,12 @@ private:
 		std::swap(de, de_alt);
 		std::swap(hl, hl_alt);
 	}
+
+	// Index registers
+
+	void pop_ix() { ix.word = popWord(); }
+	void pop_iy() { iy.word = popWord(); }
+
+	void push_ix() { pushWord(ix.word); }
+	void push_iy() { pushWord(iy.word); }
 };

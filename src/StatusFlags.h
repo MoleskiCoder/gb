@@ -7,23 +7,27 @@ struct StatusFlags {
 
 	bool S;
 	bool Z;
-	bool AC;
-	bool P;
+	bool HC;
+	bool PV;
+	bool N;
 	bool C;
 
 	enum StatusBits {
 		Sign = 0x80,				// S
 		Zero = 0x40,				// Z
-		AuxiliaryCarry = 0x10,		// AC
-		Parity = 0x4,				// Z
+		HalfCarry = 0x10,			// HC
+		Parity = 0x4,				// P
+		Overflow = 0x4,				// V
+		Subtract = 0x2,				// N
 		Carry = 0x1,				// S
 	};
 
 	StatusFlags(uint8_t value = 0) {
 		S = (value & StatusBits::Sign) != 0;
 		Z = (value & StatusBits::Zero) != 0;
-		AC = (value & StatusBits::AuxiliaryCarry) != 0;
-		P = (value & StatusBits::Parity) != 0;
+		HC = (value & StatusBits::HalfCarry) != 0;
+		PV = (value & StatusBits::Parity) != 0;		// parity/overflow
+		N = (value & StatusBits::Subtract) != 0;
 		C = (value & StatusBits::Carry) != 0;
 	}
 
@@ -39,15 +43,16 @@ struct StatusFlags {
 
 		flags &= ~0x20;		// Reserved off
 
-		if (AC)
-			flags |= StatusBits::AuxiliaryCarry;
+		if (HC)
+			flags |= StatusBits::HalfCarry;
 
 		flags &= ~0x8;		// Reserved off
 
-		if (P)
+		if (PV)
 			flags |= StatusBits::Parity;
 
-		flags |= 0x2;		// Reserved on
+		if (N)
+			flags |= StatusBits::Subtract;
 
 		if (C)
 			flags |= StatusBits::Carry;
@@ -60,10 +65,10 @@ struct StatusFlags {
 		returned += S ? "S" : "-";
 		returned += Z ? "Z" : "-";
 		returned += "0";
-		returned += AC ? "A" : "-";
+		returned += HC ? "A" : "-";
 		returned += "0";
-		returned += P ? "P" : "-";
-		returned += "1";
+		returned += PV ? "P" : "-";
+		returned += N ? "N" : "-";
 		returned += C ? "C" : "-";
 		return returned;
 	}

@@ -31,6 +31,9 @@ std::string Disassembler::state(const Z80& cpu) {
 	auto h = cpu.getHL().high;
 	auto l = cpu.getHL().low;
 
+	auto ix = cpu.getIX().word;
+	auto iy = cpu.getIY().word;
+
 	std::ostringstream output;
 
 	output
@@ -40,7 +43,8 @@ std::string Disassembler::state(const Z80& cpu) {
 		<< " " << "A=" << hex(a) << " " << "F=" << (std::string)f
 		<< " " << "B=" << hex(b) << " " << "C=" << hex(c)
 		<< " " << "D=" << hex(d) << " " << "E=" << hex(e)
-		<< " " << "H=" << hex(h) << " " << "L=" << hex(l);
+		<< " " << "H=" << hex(h) << " " << "L=" << hex(l)
+		<< " " << "IX=" << hex(ix) << " " << "IY=" << hex(iy);
 
 	return output.str();
 }
@@ -59,8 +63,9 @@ std::string Disassembler::disassemble(const Z80& cpu) const {
 	auto instruction = cpu.getInstructions()[opcode];
 	auto isExtended = cpu.hasExtendedInstructions(opcode);
 	if (isExtended) {
+		auto surrogate = opcode;
 		opcode = memory.get(++pc);
-		instruction = cpu.getInstructions()[opcode];
+		instruction = cpu.getExtendedInstructions(surrogate)[opcode];
 		output << hex(opcode);
 	}
 
