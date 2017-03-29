@@ -63,9 +63,16 @@ public:
 	uint8_t getA() const { return a; }
 	StatusFlags getF() const { return f; }
 
+	uint8_t getA_Alt() const { return a_alt; }
+	StatusFlags getF_Alt() const { return f_alt; }
+
 	const register16_t& getBC() const { return bc; }
 	const register16_t& getDE() const { return de; }
 	const register16_t& getHL() const { return hl; }
+
+	const register16_t& getBC_Alt() const { return bc_alt; }
+	const register16_t& getDE_Alt() const { return de_alt; }
+	const register16_t& getHL_Alt() const { return hl_alt; }
 
 	const register16_t& getIX() const { return ix; }
 	const register16_t& getIY() const { return iy; }
@@ -135,13 +142,13 @@ private:
 		cycles += instruction.count;
 	}
 
-	void adjustSign(uint8_t value) { f.S = ((value & 0x80) != 0); }
-	void adjustZero(uint8_t value) { f.Z = (value == 0); }
+	void adjustSign(uint8_t value) { f.SF = ((value & 0x80) != 0); }
+	void adjustZero(uint8_t value) { f.ZF = (value == 0); }
 
 	void adjustParity(uint8_t value) {
 		static const uint8_t lookup[0x10] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
 		auto set = (lookup[value >> 4] + lookup[value & 0xF]);
-		f.PV = (set % 2) == 0;
+		f.PF = (set % 2) == 0;
 	}
 
 	void adjustSZP(uint8_t value) {
@@ -156,22 +163,22 @@ private:
 
 	void adjustHalfCarryAdd(uint8_t value, int calculation) {
 		auto index = buildHalfCarryIndex(value, calculation);
-		f.HC = m_halfCarryTableAdd[index & 0x7];
+		f.HF = m_halfCarryTableAdd[index & 0x7];
 	}
 
 	void adjustAuxiliaryCarrySub(uint8_t value, int calculation) {
 		auto index = buildHalfCarryIndex(value, calculation);
-		f.HC = !m_halfCarryTableSub[index & 0x7];
+		f.HF = !m_halfCarryTableSub[index & 0x7];
 	}
 
 	void postIncrement(uint8_t value) {
 		adjustSZP(value);
-		f.HC = (value & 0x0f) == 0;
+		f.HF = (value & 0x0f) == 0;
 	}
 
 	void postDecrement(uint8_t value) {
 		adjustSZP(value);
-		f.HC = (value & 0x0f) != 0xf;
+		f.HF = (value & 0x0f) != 0xf;
 	}
 
 	void pushWord(uint16_t value);
@@ -201,7 +208,7 @@ private:
 		uint16_t subtraction = a - value;
 		adjustSZP((uint8_t)subtraction);
 		adjustAuxiliaryCarrySub(value, subtraction);
-		f.C = subtraction > 0xff;
+		f.CF = subtraction > 0xff;
 	}
 
 	void callAddress(uint16_t address) {
@@ -246,49 +253,49 @@ private:
 	}
 
 	void anda(uint8_t value) {
-		f.HC = (((a | value) & 0x8) != 0);
-		f.C = false;
+		f.HF = (((a | value) & 0x8) != 0);
+		f.CF = false;
 		adjustSZP(a &= value);
 	}
 
 	void ora(uint8_t value) {
-		f.HC = f.C = false;
+		f.HF = f.CF = false;
 		adjustSZP(a |= value);
 	}
 
 	void xra(uint8_t value) {
-		f.HC = f.C = false;
+		f.HF = f.CF = false;
 		adjustSZP(a ^= value);
 	}
 
 	void add(uint8_t value) {
 		uint16_t sum = a + value;
 		a = Memory::lowByte(sum);
-		f.C = sum > 0xff;
+		f.CF = sum > 0xff;
 		adjustSZP(a);
 		adjustHalfCarryAdd(value, sum);
 	}
 
 	void adc(uint8_t value) {
-		add(value + f.C);
+		add(value + f.CF);
 	}
 
 	void dad(uint16_t value) {
 		uint32_t sum = hl.word + value;
-		f.C = sum > 0xffff;
+		f.CF = sum > 0xffff;
 		hl.word = (uint16_t)sum;
 	}
 
 	void sub(uint8_t value) {
 		uint16_t difference = a - value;
 		a = Memory::lowByte(difference);
-		f.C = difference > 0xff;
+		f.CF = difference > 0xff;
 		adjustSZP(a);
 		adjustAuxiliaryCarrySub(value, difference);
 	}
 
 	void sbb(uint8_t value) {
-		sub(value + f.C);
+		sub(value + f.CF);
 	}
 
 	void mov_m_r(uint8_t value) {
@@ -466,17 +473,17 @@ private:
 
 	void jmp() { jmpConditional(true); }
 
-	void jc() { jmpConditional(f.C); }
-	void jnc() { jmpConditional(!f.C); }
+	void jc() { jmpConditional(f.CF); }
+	void jnc() { jmpConditional(!f.CF); }
 
-	void jz() { jmpConditional(f.Z); }
-	void jnz() { jmpConditional(!f.Z); }
+	void jz() { jmpConditional(f.ZF); }
+	void jnz() { jmpConditional(!f.ZF); }
 
-	void jpe() { jmpConditional(f.PV); }
-	void jpo() { jmpConditional(!f.PV); }
+	void jpe() { jmpConditional(f.PF); }
+	void jpo() { jmpConditional(!f.PF); }
 
-	void jm() { jmpConditional(f.S); }
-	void jp() { jmpConditional(!f.S); }
+	void jm() { jmpConditional(f.SF); }
+	void jp() { jmpConditional(!f.SF); }
 
 	void pchl() {
 		pc = hl.word;
@@ -489,17 +496,17 @@ private:
 		callAddress(destination);
 	}
 
-	void cc() { callConditional(f.C); }
-	void cnc() { callConditional(!f.C); }
+	void cc() { callConditional(f.CF); }
+	void cnc() { callConditional(!f.CF); }
 
-	void cpe() { callConditional(f.PV); }
-	void cpo() { callConditional(!f.PV); }
+	void cpe() { callConditional(f.PF); }
+	void cpo() { callConditional(!f.PF); }
 
-	void cz() { callConditional(f.Z); }
-	void cnz() { callConditional(!f.Z); }
+	void cz() { callConditional(f.ZF); }
+	void cnz() { callConditional(!f.ZF); }
 
-	void cm() { callConditional(f.S); }
-	void cp() { callConditional(!f.S); }
+	void cm() { callConditional(f.SF); }
+	void cp() { callConditional(!f.SF); }
 
 	// return
 
@@ -507,17 +514,17 @@ private:
 		pc = popWord();
 	}
 
-	void rc() { returnConditional(f.C); }
-	void rnc() { returnConditional(!f.C); }
+	void rc() { returnConditional(f.CF); }
+	void rnc() { returnConditional(!f.CF); }
 
-	void rz() { returnConditional(f.Z); }
-	void rnz() { returnConditional(!f.Z); }
+	void rz() { returnConditional(f.ZF); }
+	void rnz() { returnConditional(!f.ZF); }
 
-	void rpe() { returnConditional(f.PV); }
-	void rpo() { returnConditional(!f.PV); }
+	void rpe() { returnConditional(f.PF); }
+	void rpo() { returnConditional(!f.PF); }
 
-	void rm() { returnConditional(f.S); }
-	void rp() { returnConditional(!f.S); }
+	void rm() { returnConditional(f.SF); }
+	void rp() { returnConditional(!f.SF); }
 
 	// restart
 
@@ -711,28 +718,28 @@ private:
 		auto carry = a & 0x80;
 		a <<= 1;
 		a |= carry >> 7;
-		f.C = carry != 0;
+		f.CF = carry != 0;
 	}
 
 	void rrc() {
 		auto carry = a & 1;
 		a >>= 1;
 		a |= carry << 7;
-		f.C = carry != 0;
+		f.CF = carry != 0;
 	}
 
 	void ral() {
 		auto carry = a & 0x80;
 		a <<= 1;
-		a |= (uint8_t)f.C;
-		f.C = carry != 0;
+		a |= (uint8_t)f.CF;
+		f.CF = carry != 0;
 	}
 
 	void rar() {
 		auto carry = a & 1;
 		a >>= 1;
-		a |= f.C << 7;
-		f.C = carry != 0;
+		a |= f.CF << 7;
+		f.CF = carry != 0;
 	}
 
 	// specials
@@ -742,25 +749,25 @@ private:
 	}
 
 	void stc() {
-		f.C = true;
+		f.CF = true;
 	}
 
 	void cmc() {
-		f.C = !f.C;
+		f.CF = !f.CF;
 	}
 
 	void daa() {
-		auto carry = f.C;
+		auto carry = f.CF;
 		uint8_t addition = 0;
-		if (f.HC || (a & 0xf) > 9) {
+		if (f.HF || (a & 0xf) > 9) {
 			addition = 0x6;
 		}
-		if (f.C || (a >> 4) > 9 || ((a >> 4) >= 9 && (a & 0xf) > 9)) {
+		if (f.CF || (a >> 4) > 9 || ((a >> 4) >= 9 && (a & 0xf) > 9)) {
 			addition |= 0x60;
 			carry = true;
 		}
 		add(addition);
-		f.C = carry;
+		f.CF = carry;
 	}
 
 	// input/output
@@ -790,20 +797,22 @@ private:
 
 	// jr jump relative
 
-	void jrz() { jrConditional(f.Z); }
-	void jrnz() { jrConditional(!f.Z); }
+	void djnz() { jrConditional(--bc.high); }
 
-	void jrc() { jrConditional(f.C); }
-	void jrnc() { jrConditional(!f.C); }
+	void jrz() { jrConditional(f.ZF); }
+	void jrnz() { jrConditional(!f.ZF); }
+
+	void jrc() { jrConditional(f.CF); }
+	void jrnc() { jrConditional(!f.CF); }
 
 	// 16 bit subtraction
 
 	void sbc_hl_bc() {
-		auto subtraction = hl.word - bc.word - f.C;
+		auto subtraction = hl.word - bc.word - f.CF;
 		hl.word = subtraction;
 		adjustSign(hl.high);
-		f.Z = (hl.word == 0);
-		f.PV = subtraction > 0x10000;
+		f.ZF = (hl.word == 0);
+		f.PF = subtraction > 0x10000;
 	}
 
 	// interrupt vector
@@ -826,6 +835,9 @@ private:
 	}
 
 	// Index registers
+
+	void jp_ix() { pc = ix.word; }
+	void jp_iy() { pc = iy.word; }
 
 	void pop_ix() { ix.word = popWord(); }
 	void pop_iy() { iy.word = popWord(); }

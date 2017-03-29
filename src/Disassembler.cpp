@@ -20,16 +20,24 @@ std::string Disassembler::state(const Z80& cpu) {
 	auto sp = cpu.getStackPointer();
 
 	auto a = cpu.getA();
+	auto a_alt = cpu.getA_Alt();
 	auto f = cpu.getF();
+	auto f_alt = cpu.getF_Alt();
 
 	auto b = cpu.getBC().high;
 	auto c = cpu.getBC().low;
+	auto b_alt = cpu.getBC_Alt().high;
+	auto c_alt = cpu.getBC_Alt().low;
 
 	auto d = cpu.getDE().high;
 	auto e = cpu.getDE().low;
+	auto d_alt = cpu.getDE_Alt().high;
+	auto e_alt = cpu.getDE_Alt().low;
 
 	auto h = cpu.getHL().high;
 	auto l = cpu.getHL().low;
+	auto h_alt = cpu.getHL_Alt().high;
+	auto l_alt = cpu.getHL_Alt().low;
 
 	auto ix = cpu.getIX().word;
 	auto iy = cpu.getIY().word;
@@ -37,14 +45,22 @@ std::string Disassembler::state(const Z80& cpu) {
 	std::ostringstream output;
 
 	output
+		<< "IX=" << hex(ix)
+		<< " "
+		<< "IY=" << hex(iy) << "\t"
+		<< "A'=" << hex(a_alt) << " " << "F'=" << (std::string)f_alt
+		<< " " << "B'=" << hex(b_alt) << " " << "C'=" << hex(c_alt)
+		<< " " << "D'=" << hex(d_alt) << " " << "E'=" << hex(e_alt)
+		<< " " << "H'=" << hex(h_alt) << " " << "L'=" << hex(l_alt)
+		<< std::endl
 		<< "PC=" << hex(pc)
 		<< " "
-		<< "SP=" << hex(sp)
-		<< " " << "A=" << hex(a) << " " << "F=" << (std::string)f
-		<< " " << "B=" << hex(b) << " " << "C=" << hex(c)
-		<< " " << "D=" << hex(d) << " " << "E=" << hex(e)
-		<< " " << "H=" << hex(h) << " " << "L=" << hex(l)
-		<< " " << "IX=" << hex(ix) << " " << "IY=" << hex(iy);
+		<< "SP=" << hex(sp) << "\t"
+		<< "A =" << hex(a) << " " << "F =" << (std::string)f
+		<< " " << "B =" << hex(b) << " " << "C =" << hex(c)
+		<< " " << "D =" << hex(d) << " " << "E =" << hex(e)
+		<< " " << "H =" << hex(h) << " " << "L =" << hex(l);
+
 
 	return output.str();
 }
