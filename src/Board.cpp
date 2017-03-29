@@ -18,7 +18,7 @@ void Board::initialise() {
 		break;
 
 	case Configuration::CPM:
-		m_memory.loadRom(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
+		m_memory.loadRam(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
 
 		m_memory.set(5, 0xc9);	// ret
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Cpm, this, std::placeholders::_1));
