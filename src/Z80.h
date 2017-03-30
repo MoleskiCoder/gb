@@ -308,6 +308,13 @@ private:
 
 	//
 
+	uint8_t loadByteAddressRelative(uint16_t address) {
+		auto offset = (int8_t)fetchByte();
+		return m_memory.get(address + offset);
+	}
+
+	//
+
 	void ___();
 
 	// Move, load, and store
@@ -844,4 +851,13 @@ private:
 
 	void push_ix() { pushWord(ix.word); }
 	void push_iy() { pushWord(iy.word); }
+
+	void ld_ix() { ix.word = fetchWord(); }
+	void ld_iy() { iy.word = fetchWord(); }
+
+	void ld_a_ix_x() { a = loadByteAddressRelative(ix.word); }
+	void ld_a_iy_x() { a = loadByteAddressRelative(iy.word); }
+
+	void inc_ix() { ++ix.word; }
+	void inc_iy() { ++iy.word; }
 };
