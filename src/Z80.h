@@ -286,7 +286,7 @@ private:
 		hl.word = (uint16_t)sum;
 	}
 
-	void sub(uint8_t value) {
+	void subByte(uint8_t value) {
 		uint16_t difference = a - value;
 		a = Memory::lowByte(difference);
 		f.CF = difference > 0xff;
@@ -294,8 +294,16 @@ private:
 		adjustAuxiliaryCarrySub(value, difference);
 	}
 
+	void subWord(uint16_t value) {
+		auto subtraction = hl.word - value - f.CF;
+		hl.word = subtraction;
+		adjustSign(hl.high);
+		f.ZF = (hl.word == 0);
+		f.PF = subtraction > 0x10000;
+	}
+
 	void sbb(uint8_t value) {
-		sub(value + f.CF);
+		subByte(value + f.CF);
 	}
 
 	void mov_m_r(uint8_t value) {
@@ -391,6 +399,8 @@ private:
 	void mov_h_m() { hl.high = mov_r_m(); }
 	void mov_l_m() { hl.low = mov_r_m(); }
 
+	void mov_i_a() { iv = a; }
+
 	void mvi_a() { a = fetchByte(); }
 	void mvi_b() { bc.high = fetchByte(); }
 	void mvi_c() { bc.low = fetchByte(); }
@@ -404,10 +414,16 @@ private:
 		m_memory.set(hl.word, data);
 	}
 
+	void mov_a_ix_i() { a = loadByteAddressRelative(ix.word); }
+	void mov_a_iy_i() { a = loadByteAddressRelative(iy.word); }
+
 	void lxi_b() { bc.word = fetchWord(); }
 	void lxi_d() { de.word = fetchWord(); }
 	void lxi_h() { hl.word = fetchWord(); }
 
+	void lxi_ix() { ix.word = fetchWord(); }
+	void lxi_iy() { iy.word = fetchWord(); }
+	
 	void stax_b() { m_memory.set(bc.word, a); }
 	void stax_d() { m_memory.set(de.word, a); }
 
@@ -438,11 +454,24 @@ private:
 		std::swap(de, hl);
 	}
 
+	void mov_m_sp() {
+		auto address = fetchWord();
+		m_memory.setWord(address, sp);
+	}
+
+	void mov_sp_m() {
+		auto address = fetchWord();
+		sp = m_memory.getWord(address);
+	}
+
 	// stack ops
 
 	void push_b() { pushWord(bc.word); }
 	void push_d() { pushWord(de.word); }
 	void push_h() { pushWord(hl.word); }
+
+	void push_ix() { pushWord(ix.word); }
+	void push_iy() { pushWord(iy.word); }
 
 	void push_psw() {
 		auto pair = Memory::makeWord(f, a);
@@ -452,6 +481,9 @@ private:
 	void pop_b() { bc.word = popWord(); }
 	void pop_d() { de.word = popWord(); }
 	void pop_h() { hl.word = popWord(); }
+
+	void pop_ix() { ix.word = popWord(); }
+	void pop_iy() { iy.word = popWord(); }
 
 	void pop_psw() {
 		auto af = popWord();
@@ -492,9 +524,18 @@ private:
 	void jm() { jmpConditional(f.SF); }
 	void jp() { jmpConditional(!f.SF); }
 
-	void pchl() {
-		pc = hl.word;
-	}
+	void pchl() { pc = hl.word; }
+
+	void jp_ix() { pc = ix.word; }
+	void jp_iy() { pc = iy.word; }
+
+	void djnz() { jrConditional(--bc.high); }
+
+	void jrz() { jrConditional(f.ZF); }
+	void jrnz() { jrConditional(!f.ZF); }
+
+	void jrc() { jrConditional(f.CF); }
+	void jrnc() { jrConditional(!f.CF); }
 
 	// call
 
@@ -578,6 +619,9 @@ private:
 	void inx_d() { ++de.word; }
 	void inx_h() { ++hl.word; }
 
+	void inx_ix() { ++ix.word; }
+	void inx_iy() { ++iy.word; }
+
 	void dcx_b() { --bc.word; }
 	void dcx_d() { --de.word; }
 	void dcx_h() { --hl.word; }
@@ -621,17 +665,17 @@ private:
 
 	// subtract
 
-	void sub_a() { sub(a); }
-	void sub_b() { sub(bc.high); }
-	void sub_c() { sub(bc.low); }
-	void sub_d() { sub(de.high); }
-	void sub_e() { sub(de.low); }
-	void sub_h() { sub(hl.high); }
-	void sub_l() { sub(hl.low); }
+	void sub_a() { subByte(a); }
+	void sub_b() { subByte(bc.high); }
+	void sub_c() { subByte(bc.low); }
+	void sub_d() { subByte(de.high); }
+	void sub_e() { subByte(de.low); }
+	void sub_h() { subByte(hl.high); }
+	void sub_l() { subByte(hl.low); }
 
 	void sub_m() {
 		auto value = m_memory.get(hl.word);
-		sub(value);
+		subByte(value);
 	}
 
 	void sbb_a() { sbb(a); }
@@ -654,8 +698,13 @@ private:
 
 	void sui() {
 		auto value = fetchByte();
-		sub(value);
+		subByte(value);
 	}
+
+	void sbc_hl_bc() { subWord(bc.word); }
+	void sbc_hl_de() { subWord(de.word); }
+	void sbc_hl_hl() { subWord(hl.word); }
+	void sbc_hl_sp() { subWord(sp); }
 
 	// logical
 
@@ -789,6 +838,14 @@ private:
 		a = m_ports.read(port);
 	}
 
+	void in_b_c() { bc.high = m_ports.read(bc.low); }
+	void in_d_c() { de.high = m_ports.read(bc.low); }
+	void in_h_c() { hl.high = m_ports.read(bc.low); }
+
+	void out_c_b() { m_ports.write(bc.low, bc.high); }
+	void out_c_d() { m_ports.write(bc.low, de.high); }
+	void out_c_h() { m_ports.write(bc.low, hl.high); }
+
 	// control
 
 	void ei() { enableInterrupts(); }
@@ -798,34 +855,6 @@ private:
 
 	void hlt() {
 		m_halted = true;
-	}
-
-	// Z80 instructions
-
-	// jr jump relative
-
-	void djnz() { jrConditional(--bc.high); }
-
-	void jrz() { jrConditional(f.ZF); }
-	void jrnz() { jrConditional(!f.ZF); }
-
-	void jrc() { jrConditional(f.CF); }
-	void jrnc() { jrConditional(!f.CF); }
-
-	// 16 bit subtraction
-
-	void sbc_hl_bc() {
-		auto subtraction = hl.word - bc.word - f.CF;
-		hl.word = subtraction;
-		adjustSign(hl.high);
-		f.ZF = (hl.word == 0);
-		f.PF = subtraction > 0x10000;
-	}
-
-	// interrupt vector
-
-	void ld_i_a() {
-		iv = a;
 	}
 
 	// alternate register set
@@ -841,23 +870,20 @@ private:
 		std::swap(hl, hl_alt);
 	}
 
-	// Index registers
+	// block operations
 
-	void jp_ix() { pc = ix.word; }
-	void jp_iy() { pc = iy.word; }
+	void ldi() {
+		m_memory.set(de.word++, m_memory.get(hl.word++));
+		--bc.word;
+		f.NF = f.HF = false;
+		f.PF = bc.word != 0;
+	}
 
-	void pop_ix() { ix.word = popWord(); }
-	void pop_iy() { iy.word = popWord(); }
-
-	void push_ix() { pushWord(ix.word); }
-	void push_iy() { pushWord(iy.word); }
-
-	void ld_ix() { ix.word = fetchWord(); }
-	void ld_iy() { iy.word = fetchWord(); }
-
-	void ld_a_ix_x() { a = loadByteAddressRelative(ix.word); }
-	void ld_a_iy_x() { a = loadByteAddressRelative(iy.word); }
-
-	void inc_ix() { ++ix.word; }
-	void inc_iy() { ++iy.word; }
+	void ldir() {
+		ldi();
+		if (f.PF) {		// See LDI
+			cycles += 5;
+			pc -= 2;
+		}
+	}
 };
