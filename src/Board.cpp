@@ -4,7 +4,8 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_memory(0xffff),
-  m_cpu(Z80(m_memory, m_ports)) {
+  m_cpu(Z80(m_memory, m_ports)),
+  m_profiler(m_cpu) {
 }
 
 void Board::initialise() {
@@ -82,9 +83,11 @@ void Board::Cpu_ExecutingInstruction_Profile(const CpuEventArgs& cpuEvent) {
 
 void Board::Cpu_ExecutingInstruction_Debug(const CpuEventArgs& cpuEvent) {
 
+	const auto& cpu = cpuEvent.getCpu();
+	auto pc = cpu.getProgramCounter();
 	std::cerr
-		<< Disassembler::state(cpuEvent.getCpu())
+		<< Disassembler::state(cpu)
 		<< "\t"
-		<< m_disassembler.disassemble(cpuEvent.getCpu())
+		<< m_disassembler.disassemble(cpu, pc)
 		<< '\n';
 }

@@ -65,13 +65,12 @@ std::string Disassembler::state(const Z80& cpu) {
 	return output.str();
 }
 
-std::string Disassembler::disassemble(const Z80& cpu) const {
+std::string Disassembler::disassemble(const Z80& cpu, uint16_t& pc) const {
 
 	std::ostringstream output;
 
 	const auto& memory = cpu.getMemory();
-	auto pc = cpu.getProgramCounter();
-	auto opcode = memory.get(pc);
+	auto opcode = memory.get(pc++);
 
 	// hex opcode
 	output << hex(opcode);
@@ -80,13 +79,13 @@ std::string Disassembler::disassemble(const Z80& cpu) const {
 	auto isExtended = cpu.hasExtendedInstructions(opcode);
 	if (isExtended) {
 		auto surrogate = opcode;
-		opcode = memory.get(++pc);
+		opcode = memory.get(pc++);
 		instruction = cpu.getExtendedInstructions(surrogate)[opcode];
 		output << hex(opcode);
 	}
 
-	auto immediate = memory.get(pc + 1);
-	auto absolute = memory.getWord(pc + 1);
+	auto immediate = memory.get(pc);
+	auto absolute = memory.getWord(pc);
 	auto relative = pc + (int8_t)immediate + 2;
 
 	// hex raw operand
@@ -94,10 +93,12 @@ std::string Disassembler::disassemble(const Z80& cpu) const {
 	case Z80::Relative:
 	case Z80::Immediate:
 		output << hex(immediate);
+		++pc;
 		break;
 	case Z80::Absolute:
+		output << hex(memory.get(pc));
 		output << hex(memory.get(pc + 1));
-		output << hex(memory.get(pc + 2));
+		pc += 2;
 		break;
 	default:
 		break;

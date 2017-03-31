@@ -17,7 +17,7 @@ public:
 
 	static std::string invalid(uint8_t value);
 
-	std::string disassemble(const Z80& cpu) const;
+	std::string disassemble(const Z80& cpu, uint16_t& pc) const;
 
 private:
 	mutable boost::format m_formatter;
