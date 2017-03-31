@@ -298,9 +298,16 @@ private:
 	}
 
 	void dad(uint16_t value) {
-		uint32_t sum = hl.word + value;
-		f.CF = sum > 0xffff;
-		hl.word = (uint16_t)sum;
+		uint32_t result = hl.word + value;
+		auto result16 = result >> 16;
+		auto result8 = result >> 8;
+		uint8_t flags = f;
+		flags = (flags & (StatusFlags::Sign| StatusFlags::Zero | StatusFlags::Overflow))
+			| (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry)
+			| (result16 & StatusFlags::Carry)
+			| (result8 & (StatusFlags::YFlag | StatusFlags::XFlag));
+		hl.word = (uint16_t)result;
+		f = flags;
 	}
 
 	void adc(uint16_t value) {
