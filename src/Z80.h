@@ -693,6 +693,12 @@ private:
 
 	void adi() { add(fetchByte()); }
 
+	void add_a_ixh() { add(ix.high); }
+	void add_a_ixl() { add(ix.low); }
+
+	void add_a_iyh() { add(iy.high); }
+	void add_a_iyl() { add(iy.low); }
+
 	void adc_a() { adc(a); }
 	void adc_b() { adc(bc.high); }
 	void adc_c() { adc(bc.low); }
@@ -707,6 +713,12 @@ private:
 	}
 
 	void aci() { adc(fetchByte()); }
+
+	void adc_a_ixh() { adc(ix.high); }
+	void adc_a_ixl() { adc(ix.low); }
+
+	void adc_a_iyh() { adc(iy.high); }
+	void adc_a_iyl() { adc(iy.low); }
 
 	void dad_b() { dad_hl(bc.word); }
 	void dad_d() { dad_hl(de.word); }
@@ -743,6 +755,12 @@ private:
 		subByte(value);
 	}
 
+	void sub_ixh() { subByte(ix.high); }
+	void sub_ixl() { subByte(ix.low); }
+
+	void sub_iyh() { subByte(iy.high); }
+	void sub_iyl() { subByte(iy.low); }
+
 	void sbb_a() { sbb(a); }
 	void sbb_b() { sbb(bc.high); }
 	void sbb_c() { sbb(bc.low); }
@@ -755,6 +773,12 @@ private:
 		auto value = m_memory.get(hl.word);
 		sbb(value);
 	}
+
+	void sbc_a_ixh() { sbb(ix.high); }
+	void sbc_a_ixl() { sbb(ix.low); }
+
+	void sbc_a_iyh() { sbb(iy.high); }
+	void sbc_a_iyl() { sbb(iy.low); }
 
 	void sbi() {
 		auto value = fetchByte();
@@ -788,6 +812,12 @@ private:
 
 	void ani() { anda(fetchByte()); }
 
+	void and_ixh() { anda(ix.high); }
+	void and_ixl() { anda(ix.low); }
+
+	void and_iyh() { anda(iy.high); }
+	void and_iyl() { anda(iy.low); }
+
 	void xra_a() { xra(a); }
 	void xra_b() { xra(bc.high); }
 	void xra_c() { xra(bc.low); }
@@ -802,6 +832,12 @@ private:
 	}
 
 	void xri() { xra(fetchByte()); }
+
+	void xor_ixh() { xra(ix.high); }
+	void xor_ixl() { xra(ix.low); }
+
+	void xor_iyh() { xra(iy.high); }
+	void xor_iyl() { xra(iy.low); }
 
 	void ora_a() { ora(a); }
 	void ora_b() { ora(bc.high); }
@@ -818,6 +854,12 @@ private:
 
 	void ori() { ora(fetchByte()); }
 
+	void or_ixh() { ora(ix.high); }
+	void or_ixl() { ora(ix.low); }
+
+	void or_iyh() { ora(iy.high); }
+	void or_iyl() { ora(iy.low); }
+
 	void cmp_a() { compare(a); }
 	void cmp_b() { compare(bc.high); }
 	void cmp_c() { compare(bc.low); }
@@ -832,6 +874,12 @@ private:
 	}
 
 	void cpi() { compare(fetchByte()); }
+
+	void cp_ixh() { compare(ix.high); }
+	void cp_ixl() { compare(ix.low); }
+
+	void cp_iyh() { compare(iy.high); }
+	void cp_iyl() { compare(iy.low); }
 
 	// rotate
 
