@@ -303,6 +303,20 @@ private:
 		hl.word = (uint16_t)sum;
 	}
 
+	void adc(uint16_t value) {
+		auto flags = (uint8_t)f;
+		uint32_t result = hl.word + value + (flags & StatusFlags::Carry);
+		auto result16 = result >> 16;
+		auto result8 = result >> 8;
+		flags = (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry) |
+			(result16 & StatusFlags::Carry) |
+			(result8 & (StatusFlags::Sign | StatusFlags::YFlag | StatusFlags::XFlag)) |
+			((result & 0xffff) ? 0 : StatusFlags::Zero) |
+			(((value ^ hl.word ^ 0x8000) & (value ^ result) & 0x8000) >> 13);
+		hl.word = (uint16_t)result;
+		f = flags;
+	}
+
 	void subByte(uint8_t value) {
 		uint16_t difference = a - value;
 		a = Memory::lowByte(difference);
@@ -311,12 +325,20 @@ private:
 		adjustAuxiliaryCarrySub(value, difference);
 	}
 
-	void subWord(uint16_t value) {
-		auto subtraction = hl.word - value - f.CF;
-		hl.word = subtraction;
-		adjustSign(hl.high);
-		f.ZF = (hl.word == 0);
-		f.PF = subtraction > 0x10000;
+	void sbc(uint16_t value) {
+		auto flags = (uint8_t)f;
+		uint32_t result = hl.word - value - (flags & StatusFlags::Carry);
+		auto result16 = result >> 16;
+		auto result8 = result >> 8;
+		flags =
+			  (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry)
+			| StatusFlags::Subtract
+			| (result16 & StatusFlags::Carry)
+			| (result8 & (StatusFlags::Sign | StatusFlags::YFlag | StatusFlags::XFlag))	// straight from the result high byte
+			| ((result & 0xffff) ? 0 : StatusFlags::Zero) |
+			  (((value ^ hl.word) & (hl.word ^ result) & 0x8000) >> 13);	// No idea what this does!
+		hl.word = (uint16_t)result;
+		f = flags;
 	}
 
 	void sbb(uint8_t value) {
@@ -680,6 +702,11 @@ private:
 	void dad_h() { dad(hl.word); }
 	void dad_sp() { dad(sp); }
 
+	void adc_hl_bc() { adc(bc.word); }
+	void adc_hl_de() { adc(de.word); }
+	void adc_hl_hl() { adc(hl.word); }
+	void adc_hl_sp() { adc(sp); }
+
 	// subtract
 
 	void sub_a() { subByte(a); }
@@ -718,10 +745,10 @@ private:
 		subByte(value);
 	}
 
-	void sbc_hl_bc() { subWord(bc.word); }
-	void sbc_hl_de() { subWord(de.word); }
-	void sbc_hl_hl() { subWord(hl.word); }
-	void sbc_hl_sp() { subWord(sp); }
+	void sbc_hl_bc() { sbc(bc.word); }
+	void sbc_hl_de() { sbc(de.word); }
+	void sbc_hl_hl() { sbc(hl.word); }
+	void sbc_hl_sp() { sbc(sp); }
 
 	// logical
 
