@@ -297,18 +297,22 @@ private:
 		add(value + f.CF);
 	}
 
-	void dad(uint16_t value) {
-		uint32_t result = hl.word + value;
+	void dad(register16_t& destination, uint16_t addition) {
+		uint32_t result = destination.word + addition;
 		auto result16 = result >> 16;
 		auto result8 = result >> 8;
 		uint8_t flags = f;
-		flags = (flags & (StatusFlags::Sign| StatusFlags::Zero | StatusFlags::Overflow))
-			| (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry)
+		flags = (flags & (StatusFlags::Sign | StatusFlags::Zero | StatusFlags::Overflow))
+			| (((destination.word ^ result ^ addition) >> 8) & StatusFlags::HalfCarry)
 			| (result16 & StatusFlags::Carry)
 			| (result8 & (StatusFlags::YFlag | StatusFlags::XFlag));
-		hl.word = (uint16_t)result;
+		destination.word = (uint16_t)result;
 		f = flags;
 	}
+
+	void dad_hl(uint16_t value) { dad(hl, value); }
+	void dad_ix(uint16_t value) { dad(ix, value); }
+	void dad_iy(uint16_t value) { dad(iy, value); }
 
 	void adc(uint16_t value) {
 		auto flags = (uint8_t)f;
@@ -704,10 +708,20 @@ private:
 
 	void aci() { adc(fetchByte()); }
 
-	void dad_b() { dad(bc.word); }
-	void dad_d() { dad(de.word); }
-	void dad_h() { dad(hl.word); }
-	void dad_sp() { dad(sp); }
+	void dad_b() { dad_hl(bc.word); }
+	void dad_d() { dad_hl(de.word); }
+	void dad_h() { dad_hl(hl.word); }
+	void dad_sp() { dad_hl(sp); }
+
+	void add_ix_bc() { dad_ix(bc.word); }
+	void add_ix_de() { dad_ix(de.word); }
+	void add_ix_ix() { dad_ix(ix.word); }
+	void add_ix_sp() { dad_ix(sp); }
+
+	void add_iy_bc() { dad_iy(bc.word); }
+	void add_iy_de() { dad_iy(de.word); }
+	void add_iy_iy() { dad_iy(iy.word); }
+	void add_iy_sp() { dad_iy(sp); }
 
 	void adc_hl_bc() { adc(bc.word); }
 	void adc_hl_de() { adc(de.word); }
