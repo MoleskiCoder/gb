@@ -84,10 +84,23 @@ public:
 	void disableInterrupts() { m_interrupt = false; }
 	void enableInterrupts() { m_interrupt = true; }
 
-	void interrupt(uint8_t vector) {
+	void interrupt(uint8_t value) {
 		if (isInterruptable()) {
 			disableInterrupts();
-			restart(vector);
+			switch (m_interruptMode) {
+			case 0:
+				execute(value);
+				break;
+			case 1:
+				restart(7);
+				cycles += 13;
+				break;
+			case 2:
+				pushWord(pc);
+				pc = Memory::makeWord(value, iv);
+				cycles += 19;
+				break;
+			}
 		}
 	}
 
@@ -121,6 +134,8 @@ private:
 
 	uint8_t iv;
 	int m_interruptMode;
+	bool m_iff1;
+	bool m_iff2;
 
 	register16_t bc;
 	register16_t bc_alt;
@@ -136,6 +151,8 @@ private:
 
 	bool m_interrupt;
 	bool m_halted;
+
+	void execute(uint8_t opcode);
 
 	void execute(const Instruction& instruction) {
 		instruction.vector();
@@ -885,5 +902,19 @@ private:
 			cycles += 5;
 			pc -= 2;
 		}
+	}
+
+	// interrupts
+
+	void im_0() {
+		m_interruptMode = 0;
+	}
+
+	void im_1() {
+		m_interruptMode = 1;
+	}
+
+	void im_2() {
+		m_interruptMode = 2;
 	}
 };
