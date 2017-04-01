@@ -467,6 +467,13 @@ private:
 	void mov_a_ix_i() { a = loadByteAddressRelative(ix.word); }
 	void mov_a_iy_i() { a = loadByteAddressRelative(iy.word); }
 
+	void mov_iy_i_imm() {
+		int8_t displacement = fetchByte();
+		auto address = iy.word + displacement;
+		auto value = fetchByte();
+		m_memory.set(address, value);
+	}
+
 	void lxi_b() { bc.word = fetchWord(); }
 	void lxi_d() { de.word = fetchWord(); }
 	void lxi_h() { hl.word = fetchWord(); }
@@ -578,6 +585,8 @@ private:
 
 	void jp_ix() { pc = ix.word; }
 	void jp_iy() { pc = iy.word; }
+
+	void jr() { jrConditional(true); }
 
 	void djnz() { jrConditional(--bc.high); }
 

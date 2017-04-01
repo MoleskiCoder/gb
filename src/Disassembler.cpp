@@ -86,7 +86,9 @@ std::string Disassembler::disassemble(const Z80& cpu, uint16_t& pc) const {
 
 	auto immediate = memory.get(pc);
 	auto absolute = memory.getWord(pc);
-	auto relative = pc + (int8_t)immediate + 2;
+	auto displacement = (int8_t)immediate;
+	auto relative = pc + displacement + 2;
+	auto indexedImmediate = memory.get(pc + 1);
 
 	// hex raw operand
 	switch (instruction.mode) {
@@ -106,7 +108,7 @@ std::string Disassembler::disassemble(const Z80& cpu, uint16_t& pc) const {
 	output << "\t";
 
 	m_formatter.parse(instruction.disassembly);
-	output << m_formatter % (int)immediate % (int)absolute % relative;
+	output << m_formatter % (int)immediate % (int)absolute % relative % displacement % indexedImmediate;
 
 	return output.str();
 }
