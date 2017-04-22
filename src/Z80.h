@@ -215,6 +215,7 @@ private:
 	Instruction UNKNOWN();
 
 	void installInstructions();
+	void installInstructionsCB();
 	void installInstructionsDD();
 	void installInstructionsED();
 	void installInstructionsFD();
@@ -369,6 +370,30 @@ private:
 	uint8_t loadByteAddressRelative(uint16_t address) {
 		auto offset = (int8_t)fetchByte();
 		return m_memory.get(address + offset);
+	}
+
+	//
+
+	uint8_t resetNthBit(uint8_t value, int n) {
+		auto mask = 1 << n;
+		return value & ~mask;
+	}
+
+	void resetNthBitM(int n) {
+		auto current = m_memory.get(hl.word);
+		auto result = resetNthBit(current, n);
+		m_memory.set(hl.word, result);
+	}
+
+	uint8_t setNthBit(uint8_t value, int n) {
+		auto mask = 1 << n;
+		return value | mask;
+	}
+
+	void setNthBitM(int n) {
+		auto current = m_memory.get(hl.word);
+		auto result = setNthBit(current, n);
+		m_memory.set(hl.word, result);
 	}
 
 	//
@@ -1022,4 +1047,24 @@ private:
 	void im_2() {
 		m_interruptMode = 2;
 	}
+
+	// bit operations
+
+	void set_0_m() { setNthBitM(0); }
+	void set_1_m() { setNthBitM(1); }
+	void set_2_m() { setNthBitM(2); }
+	void set_3_m() { setNthBitM(3); }
+	void set_4_m() { setNthBitM(4); }
+	void set_5_m() { setNthBitM(5); }
+	void set_6_m() { setNthBitM(6); }
+	void set_7_m() { setNthBitM(7); }
+
+	void res_0_m() { resetNthBitM(0); }
+	void res_1_m() { resetNthBitM(1); }
+	void res_2_m() { resetNthBitM(2); }
+	void res_3_m() { resetNthBitM(3); }
+	void res_4_m() { resetNthBitM(4); }
+	void res_5_m() { resetNthBitM(5); }
+	void res_6_m() { resetNthBitM(6); }
+	void res_7_m() { resetNthBitM(7); }
 };
