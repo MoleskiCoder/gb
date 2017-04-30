@@ -14,22 +14,22 @@ Disassembler::Disassembler() {
 	m_formatter.exceptions(boost::io::all_error_bits ^ boost::io::too_many_args_bit);
 }
 
-std::string Disassembler::state(const Z80& cpu) {
+std::string Disassembler::state(Z80& cpu) {
 
 	auto pc = cpu.getProgramCounter();
 	auto sp = cpu.getStackPointer();
 
-	auto a = cpu.getA();
-	auto f = cpu.getF();
+	auto a = cpu.A();
+	auto f = cpu.F();
 
-	auto b = cpu.getBC().high;
-	auto c = cpu.getBC().low;
+	auto b = cpu.B();
+	auto c = cpu.C();
 
-	auto d = cpu.getDE().high;
-	auto e = cpu.getDE().low;
+	auto d = cpu.D();
+	auto e = cpu.E();
 
-	auto h = cpu.getHL().high;
-	auto l = cpu.getHL().low;
+	auto h = cpu.H();
+	auto l = cpu.L();
 
 	std::ostringstream output;
 

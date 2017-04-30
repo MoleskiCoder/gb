@@ -13,12 +13,19 @@ uint8_t Memory::get(int address) const {
 }
 
 void Memory::set(int address, uint8_t value) {
-	if (!m_locked[address & m_addressMask])
-		m_bus[address & m_addressMask] = value;
+	uint16_t effective = address & m_addressMask;
+	if (!m_locked[effective])
+		m_bus[effective] = value;
 }
 
 uint8_t& Memory::reference(int address) {
-	return m_bus[address & m_addressMask];
+	uint16_t effective = address & m_addressMask;
+	if (m_locked[effective]) {
+		m_temporary = m_bus[effective];
+		return m_temporary;
+	} else {
+		return m_bus[effective];
+	}
 }
 
 void Memory::clear() {

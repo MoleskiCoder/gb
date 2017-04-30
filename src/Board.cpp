@@ -57,15 +57,15 @@ void Board::Cpu_ExecutingInstruction_Cpm(const Z80&) {
 }
 
 void Board::bdos() {
-	auto c = m_cpu.getBC().low;
+	auto c = m_cpu.BC().low;
 	switch (c) {
 	case 0x2: {
-		auto character = m_cpu.getDE().low;
+		auto character = m_cpu.DE().low;
 		std::cout << character;
 		break;
 	}
 	case 0x9:
-		for (uint16_t i = m_cpu.getDE().word; m_memory.get(i) != '$'; ++i) {
+		for (uint16_t i = m_cpu.DE().word; m_memory.get(i) != '$'; ++i) {
 			std::cout << m_memory.get(i);
 		}
 		break;
@@ -80,7 +80,7 @@ void Board::Cpu_ExecutingInstruction_Profile(const Z80& cpu) {
 	m_profiler.addInstruction(m_memory.get(pc));
 }
 
-void Board::Cpu_ExecutingInstruction_Debug(const Z80& cpu) {
+void Board::Cpu_ExecutingInstruction_Debug(Z80& cpu) {
 
 	std::cerr
 		<< Disassembler::state(cpu)

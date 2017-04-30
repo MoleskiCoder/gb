@@ -35,7 +35,7 @@ private:
 
 	void Cpu_ExecutingInstruction_Cpm(const Z80& cpu);
 
-	void Cpu_ExecutingInstruction_Debug(const Z80& cpu);
+	void Cpu_ExecutingInstruction_Debug(Z80& cpu);
 	void Cpu_ExecutingInstruction_Profile(const Z80& cpu);
 
 	void bdos();

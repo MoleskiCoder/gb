@@ -19,6 +19,7 @@ Z80::Z80(Memory& memory, InputOutput& ports)
   m_prefixFD(false) {
 	m_ix.word = 0xffff;
 	m_iy.word = 0xffff;
+	m_memptr.word = 0;
 }
 
 void Z80::reset() {
@@ -53,6 +54,7 @@ void Z80::initialise() {
 
 	REFRESH() = 0xff;
 	IV() = 0xff;
+	MEMPTR().word = 0;
 
 	m_prefixCB = false;
 	m_prefixDD = false;
@@ -136,13 +138,13 @@ void Z80::postDecrement(uint8_t value) {
 void Z80::restart(uint8_t position) {
 	uint16_t address = position << 3;
 	pushWord(pc);
-	pc = address;
+	setPcViaMemptr(address);
 }
 
 void Z80::jrConditional(int conditional) {
 	auto offset = (int8_t)fetchByte();
 	if (conditional) {
-		pc += offset;
+		setPcViaMemptr(pc + offset);
 		cycles += 5;
 	}
 }
@@ -181,6 +183,7 @@ void Z80::jumpConditional(int conditional) {
 	if (conditional) {
 		pc = address;
 	}
+	MEMPTR().word = address;
 }
 
 void Z80::jumpConditionalFlag(int flag) {
@@ -213,7 +216,7 @@ void Z80::jumpConditionalFlag(int flag) {
 }
 
 void Z80::ret() {
-	pc = popWord();
+	setPcViaMemptr(popWord());
 }
 
 void Z80::retn() {
@@ -261,50 +264,46 @@ void Z80::returnConditionalFlag(int flag) {
 	}
 }
 
-void Z80::callAddress(uint16_t address) {
+void Z80::call(uint16_t address) {
 	pushWord(pc + 2);
 	pc = address;
 }
 
-void Z80::call() {
-	auto destination = getWord(pc);
-	callAddress(destination);
-}
-
-void Z80::callConditional(int condition) {
+void Z80::callConditional(uint16_t address, int condition) {
 	if (condition) {
-		call();
+		call(address);
 		cycles += 7;
 	} else {
 		pc += 2;
 	}
+	MEMPTR().word = address;
 }
 
-void Z80::callConditionalFlag(int flag) {
+void Z80::callConditionalFlag(uint16_t address, int flag) {
 	switch (flag) {
 	case 0:	// NZ
-		callConditional(!(F() & ZF));
+		callConditional(address, !(F() & ZF));
 		break;
 	case 1:	// Z
-		callConditional(F() & ZF);
+		callConditional(address, F() & ZF);
 		break;
 	case 2:	// NC
-		callConditional(!(F() & CF));
+		callConditional(address, !(F() & CF));
 		break;
 	case 3:	// C
-		callConditional(F() & CF);
+		callConditional(address, F() & CF);
 		break;
 	case 4:	// PO
-		callConditional(!(F() & PF));
+		callConditional(address, !(F() & PF));
 		break;
 	case 5:	// PE
-		callConditional(F() & PF);
+		callConditional(address, F() & PF);
 		break;
 	case 6:	// P
-		callConditional(!(F() & SF));
+		callConditional(address, !(F() & SF));
 		break;
 	case 7:	// M
-		callConditional(F() & SF);
+		callConditional(address, F() & SF);
 		break;
 	}
 }
@@ -513,7 +512,8 @@ uint8_t Z80::add(uint8_t value) {
 void Z80::andr(uint8_t& operand, uint8_t value) {
 	setFlag(HC);
 	clearFlag(CF | NF);
-	adjustSZP(operand &= value);
+	operand &= value;
+	adjustSZP(operand);
 	adjustXYFlags(operand);
 }
 
@@ -523,13 +523,15 @@ void Z80::anda(uint8_t value) {
 
 void Z80::xora(uint8_t value) {
 	clearFlag(HC | CF | NF);
-	adjustSZP(A() ^= value);
+	A() ^= value;
+	adjustSZP(A());
 	adjustXYFlags(A());
 }
 
 void Z80::ora(uint8_t value) {
 	clearFlag(HC | CF | NF);
-	adjustSZP(A() |= value);
+	A() |= value;
+	adjustSZP(A());
 	adjustXYFlags(A());
 }
 
@@ -643,7 +645,6 @@ void Z80::bit(int n, uint8_t& operand) {
 	andr(discarded, 1 << n);
 	clearFlag(PF, discarded);
 	setFlag(CF, carry);
-	adjustXYFlags(operand);
 }
 
 void Z80::res(int n, uint8_t& operand) {
@@ -660,32 +661,33 @@ void Z80::set(int n, uint8_t& operand) {
 
 void Z80::daa() {
 
+	uint8_t a = A();
 
-	/* The following algorithm is from
-	* comp.sys.sinclair's FAQ.
-	*/
+	auto lowAdjust = (F() & HC) | ((A() & 0xf) > 9);
+	auto highAdjust = (F() & CF) | (A() > 0x99);
 
-	auto a = A();
-	int c = 0, d = 0;
-	if (a > 0x99 || (F() & CF)) {
-		c = CF;
-		d = 0x60;
+	if (F() & NF) {
+		if (lowAdjust)
+			a -= 6;
+		if (highAdjust)
+			a -= 0x60;
+	} else {
+		if (lowAdjust)
+			a += 6;
+		if (highAdjust)
+			a += 0x60;
 	}
 
-	if ((a & 0xf) > 0x9 || (F() & HC))
-		d += 0x06;
+	F() = (F() & (CF | NF)) | (A() > 0x99) | ((A() ^ a) & HC);
 
-	A() += (F() & NF) ? -d : +d;
-	adjustSZP(A());
-	setFlag(((A() ^ a) & HC)
-		| (F() & NF)
-		| c);
+	adjustSZP(a);
+	adjustXYFlags(a);
 
-	adjustXYFlags(A());
+	A() = a;
 }
 
 void Z80::cpl() {
-	A() ^= Mask8;
+	A() = ~A();
 	adjustXYFlags(A());
 	setFlag(HC | NF);
 }
@@ -698,7 +700,7 @@ void Z80::scf() {
 
 void Z80::ccf() {
 	auto carry = F() & CF;
-	setFlag(carry << 4); // the half carry flag
+	setFlag(HC, carry);
 	clearFlag(CF, carry);
 	clearFlag(NF);
 	adjustXYFlags(A());
@@ -707,7 +709,7 @@ void Z80::ccf() {
 void Z80::xhtl(register16_t& operand) {
 	auto tos = getWord(sp);
 	setWord(sp, operand.word);
-	operand.word = tos;
+	MEMPTR().word = operand.word = tos;
 }
 
 void Z80::xhtl() {
@@ -719,60 +721,82 @@ void Z80::xhtl() {
 		xhtl(HL());
 }
 
-void Z80::cpi() {
-	auto source = HL().word++;
-	auto oldCarry = F() & CF;
-	compare(m_memory.get(source));
+void Z80::cp(uint16_t source) {
+	auto value = m_memory.get(source);
+	uint8_t result = A() - value;
+
 	setFlag(PF, --BC().word);
-	setFlag(CF, oldCarry);
+
+	setFlag(SF, result & Bit7);
+	clearFlag(ZF, result);
+	adjustHalfCarrySub(A(), value, result);
+	setFlag(NF);
+
+	if (F() & HC)
+		result -= 1;
+
+	setFlag(YF, result & Bit1);
+	setFlag(XF, result & Bit3);
+}
+
+void Z80::cpi() {
+	cp(HL().word++);
+	MEMPTR().word++;
 }
 
 void Z80::cpd() {
-	auto source = HL().word--;
-	auto oldCarry = F() & CF;
-	compare(m_memory.get(source));
+	cp(HL().word--);
+	MEMPTR().word--;
+}
+
+void Z80::blockLoad(uint16_t source, uint16_t destination) {
+	auto value = m_memory.get(source);
+	m_memory.set(destination, value);
+	auto xy = A() + value;
+	setFlag(XF, xy & 8);
+	setFlag(YF, xy & 2);
+	clearFlag(NF | HC);
 	setFlag(PF, --BC().word);
-	setFlag(CF, oldCarry);
 }
 
 void Z80::ldd() {
 	auto source = HL().word--;
 	auto destination = DE().word--;
-	auto value = m_memory.get(source);
-	m_memory.set(destination, value);
-	auto xy = A() + value;
-	setFlag(XF, xy & 8);
-	setFlag(YF, xy & 2);
-	clearFlag(NF | HC);
-	setFlag(PF, --BC().word);
+	blockLoad(source, destination);
 }
 
 void Z80::ldi() {
 	auto source = HL().word++;
 	auto destination = DE().word++;
-	auto value = m_memory.get(source);
-	m_memory.set(destination, value);
-	auto xy = A() + value;
-	setFlag(XF, xy & 8);
-	setFlag(YF, xy & 2);
-	clearFlag(NF | HC);
-	setFlag(PF, --BC().word);
+	blockLoad(source, destination);
 }
 
 void Z80::ldir() {
+
+	auto bc = BC().word;
+
 	ldi();
 	if (F() & PF) {		// See LDI
 		cycles += 5;
 		pc -= 2;
 	}
+
+	if (bc != 1)
+		MEMPTR().word = pc + 1;
 }
 
 void Z80::lddr() {
+
+	auto bc = BC().word;
+
 	ldd();
 	if (F() & PF) {		// See LDR
 		cycles += 5;
 		pc -= 2;
 	}
+
+	if (bc != 1)
+		MEMPTR().word = pc + 1;
 }
 
 void Z80::cpir() {
@@ -781,6 +805,7 @@ void Z80::cpir() {
 		cycles += 5;
 		pc -= 2;
 	}
+	MEMPTR().word = pc + 1;
 }
 
 void Z80::cpdr() {
@@ -789,18 +814,19 @@ void Z80::cpdr() {
 		cycles += 5;
 		pc -= 2;
 	}
+	MEMPTR().word = pc + 1;
 }
 
 void Z80::ini() {
+	auto bc = BC().word;
 	auto port = C();
 	auto value = m_ports.read(port);
 	auto address = HL().word;
 	m_memory.set(address, value);
 	postDecrement(--B());
-	setFlag(NF, value & Bit7);
+	setFlag(NF);
 	HL().word++;
-	setFlag(HC | CF, ((value + ((C() + 1) & 0xff)) > 0xff));
-	adjustParity(((value + ((C() + 1) & 0xff)) & 7) ^ B());
+	MEMPTR().word = bc + 1;
 }
 
 void Z80::inir() {
@@ -812,6 +838,7 @@ void Z80::inir() {
 }
 
 void Z80::ind() {
+	auto bc = BC().word;
 	auto port = C();
 	auto value = m_ports.read(port);
 	auto address = HL().word;
@@ -821,6 +848,7 @@ void Z80::ind() {
 	HL().word--;
 	setFlag(HC | CF, (value + ((C() - 1) & 0xff) > 0xff));
 	adjustParity(((value + ((C() - 1) & 0xff)) & 7) ^ B());
+	MEMPTR().word = bc - 1;
 }
 
 void Z80::indr() {
@@ -841,6 +869,7 @@ void Z80::outi() {
 	HL().word++;
 	setFlag(HC | CF, (L() + value) > 0xff);
 	adjustParity(((value + L()) & 7) ^ B());
+	MEMPTR().word = BC().word + 1;
 }
 
 void Z80::otir() {
@@ -861,6 +890,7 @@ void Z80::outd() {
 	HL().word++;
 	setFlag(HC | CF, (L() + value) > 0xff);
 	adjustParity(((value + L()) & 7) ^ B());
+	MEMPTR().word = BC().word - 1;
 }
 
 void Z80::otdr() {
@@ -883,27 +913,33 @@ void Z80::rrd() {
 	auto accumulator = A();
 	auto memory = m_memory.get(HL().word);
 	A() = (accumulator & 0xf0) | lowNibble(memory);
-	auto updated = promoteNibble(lowNibble(accumulator)) | highNibble(memory);
+	uint8_t updated = promoteNibble(lowNibble(accumulator)) | highNibble(memory);
 	m_memory.set(HL().word, updated);
 	adjustSZP(A());
+	adjustXYFlags(A());
 	clearFlag(NF | HC);
+	MEMPTR().word = HL().word + 1;
 }
 
 void Z80::rld() {
 	auto accumulator = A();
 	auto memory = m_memory.get(HL().word);
-	auto updated = lowNibble(accumulator) | promoteNibble(memory);
+	uint8_t updated = lowNibble(accumulator) | promoteNibble(memory);
 	A() = (accumulator & 0xf0) | highNibble(memory);
 	m_memory.set(HL().word, updated);
 	adjustSZP(A());
+	adjustXYFlags(A());
 	clearFlag(NF | HC);
+	MEMPTR().word = HL().word + 1;
 }
 
 void Z80::readPort(uint8_t& operand, uint8_t port) {
+	auto bc = BC().word;
 	operand = m_ports.read(port);
 	adjustSZP(operand);
 	adjustXYFlags(operand);
 	clearFlag(HC | NF);
+	MEMPTR().word = bc + 1;
 }
 
 void Z80::step() {
@@ -1045,13 +1081,21 @@ void Z80::executeCB(int x, int y, int z, int p, int q) {
 	case 1:	// BIT y, r[z]
 		if (m_prefixDD || m_prefixFD) {
 			auto& displaced = DISPLACED();
+			auto memptr = MEMPTR().word;
 			bit(y, displaced);
+			MEMPTR().word = memptr;
+			adjustXYFlags(MEMPTR().high);
 			cycles += 20;
 		} else {
-			bit(y, R(z));
+			auto operand = R(z);
+			bit(y, operand);
 			cycles += 8;
-			if (z == 6)
+			if (z == 6) {
+				adjustXYFlags(MEMPTR().high);
 				cycles += 4;
+			} else {
+				adjustXYFlags(operand);
+			}
 		}
 		break;
 	case 2:	// RES y, r[z]
@@ -1105,20 +1149,20 @@ void Z80::executeED(int x, int y, int z, int p, int q) {
 			cycles += 12;
 			break;
 		case 1:	// Output to port with 16-bit address
-			if (y == 6) {	// OUT (C),0
+			if (y == 6)	// OUT (C),0
 				m_ports.write(C(), 0);
-			} else {		// OUT (C),r[y]
+			else		// OUT (C),r[y]
 				m_ports.write(C(), R(y));
-			}
+			MEMPTR().word = BC().word + 1;
 			cycles += 12;
 			break;
 		case 2:	// 16-bit add/subtract with carry
 			switch (q) {
-			case 0:
-				RP(HL_IDX) = sbc(RP(p));	// SBC HL, rp[p]
+			case 0:	// SBC HL, rp[p]
+				sbcViaMemptr(RP(HL_IDX), RP(p));
 				break;
-			case 1:
-				RP(HL_IDX) = adc(RP(p));	// ADC HL, rp[p]
+			case 1:	// ADC HL, rp[p]
+				adcViaMemptr(RP(HL_IDX), RP(p));
 				break;
 			}
 			cycles += 15;
@@ -1126,10 +1170,10 @@ void Z80::executeED(int x, int y, int z, int p, int q) {
 		case 3:	// Retrieve/store register pair from/to immediate address
 			switch (q) {
 			case 0:	// LD (nn), rp[p]
-				setWord(fetchWord(), RP(p));
+				setWordViaMemptr(fetchWord(), RP(p));
 				break;
 			case 1:	// LD rp[p], (nn)
-				RP(p) = getWord(fetchWord());
+				RP(p) = getWordViaMemptr(fetchWord());
 				break;
 			}
 			cycles += 20;
@@ -1319,7 +1363,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 				cycles += 10;
 				break;
 			case 1:	// ADD HL,rp
-				RP(HL_IDX) = add(RP(p));
+				addViaMemptr(RP(HL_IDX), RP(p));
 				cycles += 11;
 				break;
 			}
@@ -1329,24 +1373,19 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			case 0:
 				switch (p) {
 				case 0:	// LD (BC),A
-					m_memory.set(BC().word, A());
+					setViaMemptr(BC().word, A());
 					cycles += 7;
 					break;
 				case 1:	// LD (DE),A
-					m_memory.set(DE().word, A());
+					setViaMemptr(DE().word, A());
 					cycles += 7;
 					break;
 				case 2:	// LD (nn),HL
-					if (m_prefixDD)
-						setWord(fetchWord(), IX().word);
-					else if (m_prefixFD)
-						setWord(fetchWord(), IY().word);
-					else
-						setWord(fetchWord(), HL().word);
+					setWordViaMemptr(fetchWord(), ALT_HL());
 					cycles += 16;
 					break;
-				case 3:	// LD (nn),A
-					m_memory.set(fetchWord(), A());
+				case 3: // LD (nn),A
+					setViaMemptr(fetchWord(), A());
 					cycles += 13;
 					break;
 				}
@@ -1354,24 +1393,19 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			case 1:
 				switch (p) {
 				case 0:	// LD A,(BC)
-					A() = m_memory.get(BC().word);
+					A() = getViaMemptr(BC().word);
 					cycles += 7;
 					break;
 				case 1:	// LD A,(DE)
-					A() = m_memory.get(DE().word);
+					A() = getViaMemptr(DE().word);
 					cycles += 7;
 					break;
 				case 2:	// LD HL,(nn)
-					if (m_prefixDD)
-						IX().word = getWord(fetchWord());
-					else if (m_prefixFD)
-						IY().word = getWord(fetchWord());
-					else
-						HL().word = getWord(fetchWord());
+					ALT_HL() = getWordViaMemptr(fetchWord());
 					cycles += 16;
 					break;
 				case 3:	// LD A,(nn)
-					A() = m_memory.get(fetchWord());
+					A() = getViaMemptr(fetchWord());
 					cycles += 13;
 					break;
 				}
@@ -1528,22 +1562,12 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 					exx();
 					cycles += 4;
 					break;
-				case 2:	// JP (HL)
-					if (m_prefixDD)
-						pc = IX().word;
-					else if (m_prefixFD)
-						pc = IY().word;
-					else
-						pc = HL().word;
+				case 2:	// JP HL
+					pc = ALT_HL();
 					cycles += 4;
 					break;
 				case 3:	// LD SP,HL
-					if (m_prefixDD)
-						sp = IX().word;
-					else if (m_prefixFD)
-						sp = IY().word;
-					else
-						sp = HL().word;
+					sp = ALT_HL();
 					cycles += 4;
 					break;
 				}
@@ -1556,7 +1580,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 		case 3:	// Assorted operations
 			switch (y) {
 			case 0:	// JP nn
-				pc = fetchWord();
+				setPcViaMemptr(fetchWord());
 				cycles += 10;
 				break;
 			case 1:	// CB prefix
@@ -1567,13 +1591,22 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 				}
 				execute(fetchByte());
 				break;
-			case 2:	// OUT (n),A
-				m_ports.write(fetchByte(), A());
-				cycles += 11;
+			case 2: { // OUT (n),A
+					auto port = fetchByte();
+					m_ports.write(port, A());
+					MEMPTR().low = ++port;
+					MEMPTR().high = A();
+					cycles += 11;
+				}
 				break;
-			case 3:	// IN A,(n)
-				A() = m_ports.read(fetchByte());
-				cycles += 11;
+			case 3: { // IN A,(n)
+					auto before = A();
+					auto port = fetchByte();
+					A() = m_ports.read(port);
+					MEMPTR().low = ++port;
+					MEMPTR().high = before;
+					cycles += 11;
+				}
 				break;
 			case 4:	// EX (SP),HL
 				xhtl();
@@ -1594,7 +1627,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			}
 			break;
 		case 4:	// Conditional call: CALL cc[y], nn
-			callConditionalFlag(y);
+			callConditionalFlag(getWord(pc), y);
 			cycles += 10;
 			break;
 		case 5:	// PUSH & various ops
@@ -1606,7 +1639,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			case 1:
 				switch (p) {
 				case 0:	// CALL nn
-					call();
+					callConditional(getWord(pc), true);
 					cycles += 17;
 					break;
 				case 1:	// DD prefix

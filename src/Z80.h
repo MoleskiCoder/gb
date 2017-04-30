@@ -27,30 +27,6 @@ public:
 	void execute(uint8_t opcode);
 	void step();
 
-	const register16_t& getBC() const {
-		return m_registers[m_registerSet][BC_IDX];
-	}
-
-	const register16_t& getDE() const {
-		return m_registers[m_registerSet][DE_IDX];
-	}
-
-	const register16_t& getHL() const {
-		return m_registers[m_registerSet][HL_IDX];
-	}
-
-	const register16_t& getAF() const {
-		return m_accumulatorFlags[m_accumulatorFlagsSet];
-	}
-
-	const uint8_t& getA() const {
-		return getAF().high;
-	}
-
-	const uint8_t& getF() const {
-		return getAF().low;
-	}
-
 	// Mutable access to processor!!
 
 	register16_t& AF() {
@@ -90,6 +66,8 @@ public:
 	bool& IFF1() { return m_iff1; }
 	bool& IFF2() { return m_iff2; }
 
+	register16_t& MEMPTR() { return m_memptr; }
+
 	void exx() {
 		m_registerSet ^= 1;
 	}
@@ -119,6 +97,8 @@ private:
 	bool m_iff1;
 	bool m_iff2;
 
+	register16_t m_memptr;
+
 	bool m_prefixCB;
 	bool m_prefixDD;
 	bool m_prefixED;
@@ -143,7 +123,8 @@ private:
 	uint8_t& DISPLACED() {
 		if (!(m_prefixDD || m_prefixFD))
 			throw std::logic_error("Unprefixed indexed displacement requested");
-		auto address = (m_prefixDD ? m_ix.word : m_iy.word) + m_displacement;
+		uint16_t address = (m_prefixDD ? m_ix.word : m_iy.word) + m_displacement;
+		MEMPTR().word = address;
 		return m_memory.reference(address);
 	}
 
@@ -201,6 +182,14 @@ private:
 		}
 	}
 
+	uint16_t& ALT_HL() {
+		if (m_prefixDD)
+			return IX().word;
+		else if (m_prefixFD)
+			return IY().word;
+		return HL().word;
+	}
+
 	uint16_t& RP2(int rp) {
 		switch (rp) {
 		case 3:
@@ -213,6 +202,46 @@ private:
 		default:
 			return m_registers[m_registerSet][rp].word;
 		}
+	}
+
+	uint8_t getViaMemptr(uint16_t address) {
+		MEMPTR().word = address + 1;
+		return m_memory.get(address);
+	}
+
+	void setViaMemptr(uint16_t address, uint8_t value) {
+		m_memory.set(address, value);
+		MEMPTR().low = Memory::lowByte(++address);
+		MEMPTR().high = value;
+	}
+
+	uint16_t getWordViaMemptr(uint16_t address) {
+		MEMPTR().word = address + 1;
+		return getWord(address);
+	}
+
+	void setWordViaMemptr(uint16_t address, uint16_t value) {
+		setWord(address, value);
+		MEMPTR().word = ++address;
+	}
+
+	void setPcViaMemptr(uint16_t address) {
+		MEMPTR().word = pc = address;
+	}
+
+	void addViaMemptr(uint16_t& hl, uint16_t operand) {
+		MEMPTR().word = hl + 1;
+		hl = add(operand);
+	}
+
+	void sbcViaMemptr(uint16_t& hl, uint16_t operand) {
+		MEMPTR().word = hl + 1;
+		hl = sbc(operand);
+	}
+
+	void adcViaMemptr(uint16_t& hl, uint16_t operand) {
+		MEMPTR().word = hl + 1;
+		hl = adc(operand);
 	}
 
 	int buildHalfCarryIndex(uint8_t before, uint8_t value, int calculation) {
@@ -258,10 +287,9 @@ private:
 	void jumpConditional(int condition);
 	void jumpConditionalFlag(int flag);
 
-	void callAddress(uint16_t address);
-	void call();
-	void callConditional(int condition);
-	void callConditionalFlag(int flag);
+	void call(uint16_t address);
+	void callConditional(uint16_t address, int condition);
+	void callConditionalFlag(uint16_t address, int flag);
 
 	uint16_t sbc(uint16_t value);
 	uint16_t adc(uint16_t value);
@@ -308,11 +336,15 @@ private:
 	void xhtl(register16_t& operand);
 	void xhtl();
 
+	void cp(uint16_t source);
+
 	void cpi();
 	void cpir();
 
 	void cpd();
 	void cpdr();
+
+	void blockLoad(uint16_t source, uint16_t destination);
 
 	void ldi();
 	void ldir();

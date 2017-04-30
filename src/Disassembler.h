@@ -9,7 +9,7 @@ class Disassembler {
 public:
 	Disassembler();
 
-	static std::string state(const Z80& cpu);
+	static std::string state(Z80& cpu);
 	std::string disassemble(const Z80& cpu);
 
 	static std::string flag(uint8_t value, int flag, const std::string& represents);

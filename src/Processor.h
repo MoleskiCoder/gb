@@ -103,7 +103,7 @@ protected:
 	bool m_halted;
 
 	static uint16_t makeWord(uint8_t low, uint8_t high) {
-		return (high << 8) + low;
+		return (high << 8) | low;
 	}
 
 	void pushWord(uint16_t value);

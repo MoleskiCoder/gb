@@ -25,6 +25,7 @@ private:
 	std::array<bool, 0x10000> m_locked;
 
 	int m_addressMask;		// Mirror
+	uint8_t m_temporary;
 
 	int loadMemory(const std::string& path, uint16_t offset);
 };

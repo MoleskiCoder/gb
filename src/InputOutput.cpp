@@ -18,17 +18,21 @@ void InputOutput::writeOutputPort(uint8_t port, uint8_t value) {
 }
 
 void InputOutput::OnReadingPort(uint8_t port) {
-	ReadingPort.fire(PortEventArgs(port));
+	PortEventArgs event(port);
+	ReadingPort.fire(event);
 }
 
 void InputOutput::OnReadPort(uint8_t port) {
-	ReadPort.fire(PortEventArgs(port));
+	PortEventArgs event(port);
+	ReadPort.fire(event);
 }
 
 void InputOutput::OnWritingPort(uint8_t port) {
-	WritingPort.fire(PortEventArgs(port));
+	PortEventArgs event(port);
+	WritingPort.fire(event);
 }
 
 void InputOutput::OnWrittenPort(uint8_t port) {
-	WrittenPort.fire(PortEventArgs(port));
+	PortEventArgs event(port);
+	WrittenPort.fire(event);
 }
