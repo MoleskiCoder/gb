@@ -25,11 +25,17 @@ public:
 
 	void initialise();
 
+	bool powered() const { return m_power; }
+	void powerOn() { m_power = true; }
+	void powerOff() { m_power = false; }
+
 private:
 	const Configuration& m_configuration;
 	Memory m_memory;
 	InputOutput m_ports;
 	Z80 m_cpu;
+	bool m_power;
+
 	Profiler m_profiler;
 	Disassembler m_disassembler;
 
@@ -37,6 +43,10 @@ private:
 
 	void Cpu_ExecutingInstruction_Debug(Z80& cpu);
 	void Cpu_ExecutingInstruction_Profile(const Z80& cpu);
+
+	void Board_PortWriting_ZX81(const PortEventArgs& portEvent);
+	void Board_PortWritten_ZX81(const PortEventArgs& portEvent);
+	void Board_PortReading_ZX81(const PortEventArgs& portEvent);
 
 	void bdos();
 };

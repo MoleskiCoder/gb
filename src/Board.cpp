@@ -4,10 +4,13 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_memory(0xffff),
-  m_cpu(Z80(m_memory, m_ports)) {
+  m_cpu(Z80(m_memory, m_ports)),
+  m_power(false) {
 }
 
 void Board::initialise() {
+
+	m_power = false;
 
 	m_memory.clear();
 	auto romDirectory = m_configuration.getRomDirectory();
@@ -15,6 +18,9 @@ void Board::initialise() {
 	switch (m_configuration.getMachineMode()) {
 	case Configuration::ZX81:
 		m_memory.loadRom(romDirectory + "/zx81_v2.rom", 0x00);
+		m_ports.WritingPort.connect(std::bind(&Board::Board_PortWriting_ZX81, this, std::placeholders::_1));
+		m_ports.WrittenPort.connect(std::bind(&Board::Board_PortWritten_ZX81, this, std::placeholders::_1));
+		m_ports.ReadingPort.connect(std::bind(&Board::Board_PortReading_ZX81, this, std::placeholders::_1));
 		break;
 
 	case Configuration::CPM:
@@ -87,4 +93,21 @@ void Board::Cpu_ExecutingInstruction_Debug(Z80& cpu) {
 		<< "\t"
 		<< m_disassembler.disassemble(cpu)
 		<< '\n';
+}
+
+void Board::Board_PortWriting_ZX81(const PortEventArgs& portEvent) {
+	auto port = portEvent.getPort();
+	auto value = m_ports.readOutputPort(port);
+	std::cout << "** Writing to port: " << Disassembler::hex(port) << " Value: " << Disassembler::hex(value) << std::endl;
+}
+
+void Board::Board_PortWritten_ZX81(const PortEventArgs& portEvent) {
+	auto port = portEvent.getPort();
+	auto value = m_ports.readOutputPort(port);
+	std::cout << "** Written to port: " << Disassembler::hex(port) << " Value: " << Disassembler::hex(value) << std::endl;
+}
+
+void Board::Board_PortReading_ZX81(const PortEventArgs& portEvent) {
+	auto port = portEvent.getPort();
+	std::cout << "** Reading port: " << Disassembler::hex(port) << std::endl;
 }

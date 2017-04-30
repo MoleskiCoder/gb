@@ -100,12 +100,14 @@ void Computer::runLoop() {
 
 	auto& cpu = m_board.getCPUMutable();
 
-	while (!cpu.isHalted()) {
+	m_board.powerOn();
+
+	while (m_board.powered()) {
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {
 			switch (e.type) {
 			case SDL_QUIT:
-				cpu.halt();
+				m_board.powerOff();
 				break;
 			case SDL_KEYDOWN:
 				handleKeyDown(e.key.keysym.sym);
