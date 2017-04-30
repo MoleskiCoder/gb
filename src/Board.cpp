@@ -4,8 +4,7 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_memory(0xffff),
-  m_cpu(Z80(m_memory, m_ports)),
-  m_profiler(m_cpu) {
+  m_cpu(Z80(m_memory, m_ports)) {
 }
 
 void Board::initialise() {
@@ -19,8 +18,8 @@ void Board::initialise() {
 		break;
 
 	case Configuration::CPM:
-		// m_memory.loadRam(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
-		m_memory.loadRam(romDirectory + "/zexdoc.com", 0x100);		// Cringle preliminary tests
+		m_memory.loadRam(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
+		//m_memory.loadRam(romDirectory + "/zexdoc.com", 0x100);		// Cringle preliminary tests
 
 		m_memory.set(5, 0xc9);	// ret
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Cpm, this, std::placeholders::_1));
@@ -42,7 +41,7 @@ void Board::initialise() {
 	m_cpu.setProgramCounter(m_configuration.getStartAddress());
 }
 
-void Board::Cpu_ExecutingInstruction_Cpm(const CpuEventArgs&) {
+void Board::Cpu_ExecutingInstruction_Cpm(const Z80&) {
 	auto pc = m_cpu.getProgramCounter();
 	switch (pc) {
 	case 0x0:	// CP/M warm start
@@ -73,22 +72,19 @@ void Board::bdos() {
 	}
 }
 
-void Board::Cpu_ExecutingInstruction_Profile(const CpuEventArgs& cpuEvent) {
+void Board::Cpu_ExecutingInstruction_Profile(const Z80& cpu) {
 
-	const auto& cpu = cpuEvent.getCpu();
 	const auto pc = cpu.getProgramCounter();
 
 	m_profiler.addAddress(pc);
 	m_profiler.addInstruction(m_memory.get(pc));
 }
 
-void Board::Cpu_ExecutingInstruction_Debug(const CpuEventArgs& cpuEvent) {
+void Board::Cpu_ExecutingInstruction_Debug(const Z80& cpu) {
 
-	const auto& cpu = cpuEvent.getCpu();
-	auto pc = cpu.getProgramCounter();
 	std::cerr
 		<< Disassembler::state(cpu)
 		<< "\t"
-		<< m_disassembler.disassemble(cpu, pc)
+		<< m_disassembler.disassemble(cpu)
 		<< '\n';
 }

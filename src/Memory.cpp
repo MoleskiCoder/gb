@@ -6,22 +6,10 @@
 #include <algorithm>
 
 Memory::Memory(int addressMask)
-: m_bus(0x10000),
-  m_locked(m_bus.size()),
-  m_addressMask(addressMask) {}
-
-std::vector<uint8_t>& Memory::getBusMutable() {
-	return m_bus;
-}
+: m_addressMask(addressMask) {}
 
 uint8_t Memory::get(int address) const {
 	return m_bus[address & m_addressMask];
-}
-
-uint16_t Memory::getWord(int address) const {
-	auto low = get(address);
-	auto high = get(address + 1);
-	return makeWord(low, high);
 }
 
 void Memory::set(int address, uint8_t value) {
@@ -29,13 +17,13 @@ void Memory::set(int address, uint8_t value) {
 		m_bus[address & m_addressMask] = value;
 }
 
-void Memory::setWord(int address, uint16_t value) {
-	set(address, lowByte(value));
-	set(address + 1, highByte(value));
+uint8_t& Memory::reference(int address) {
+	return m_bus[address & m_addressMask];
 }
 
 void Memory::clear() {
 	std::fill(m_bus.begin(), m_bus.end(), 0);
+	std::fill(m_locked.begin(), m_locked.end(), false);
 }
 
 void Memory::loadRom(const std::string& path, uint16_t offset) {

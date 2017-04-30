@@ -1,1070 +1,341 @@
 #pragma once
 
-#include <cstdint>
-#include <array>
-#include <functional>
-#include <map>
+#include "Processor.h"
 
-#include "Memory.h"
-#include "StatusFlags.h"
-#include "InputOutput.h"
-#include "Signal.h"
-#include "CpuEventArgs.h"
-
-class Z80 {
+class Z80 : public Processor {
 public:
-
-	typedef union {
-		struct {
-#ifdef HOST_LITTLE_ENDIAN
-			uint8_t low;
-			uint8_t high;
-#endif
-#ifdef HOST_BIG_ENDIAN
-			uint8_t high;
-			uint8_t low;
-#endif
-		};
-		uint16_t word;
-	} register16_t;
-
-	typedef std::function<void()> instruction_t;
-
-	enum AddressingMode {
-		Unknown,
-		Implied,	// zero bytes
-		Immediate,	// single byte
-		Relative,	// single byte, relative to pc
-		Absolute	// two bytes, little endian
-	};
-
-	struct Instruction {
-		instruction_t vector = nullptr;
-		AddressingMode mode = Unknown;
-		std::string disassembly;
-		uint64_t count = 0;
+	enum StatusBits {
+		SF = Bit7,
+		ZF = Bit6,
+		YF = Bit5,
+		HC = Bit4,
+		XF = Bit3,
+		PF = Bit2,
+		VF = Bit2,
+		NF = Bit1,
+		CF = Bit0,
 	};
 
 	Z80(Memory& memory, InputOutput& ports);
 
-	Signal<CpuEventArgs> ExecutingInstruction;
+	Signal<Z80> ExecutingInstruction;
 
-	const std::array<Instruction, 0x100>& getInstructions() const { return instructions; }
-	const std::array<Instruction, 0x100>& getExtendedInstructions(uint8_t surrogate) const { return extendedInstructions.find(surrogate)->second; }
-	bool hasExtendedInstructions(uint8_t surrogate) const { return extendedInstructions.find(surrogate) != extendedInstructions.cend(); }
+	void disableInterrupts();
+	void enableInterrupts();
+	void interrupt(bool maskable, uint8_t value);
 
-	const Memory& getMemory() const { return m_memory; }
-
-	uint16_t getProgramCounter() const { return pc; }
-	void setProgramCounter(uint16_t value) { pc = value; }
-
-	uint16_t getStackPointer() const { return sp; }
-
-	uint8_t getA() const { return a; }
-	StatusFlags getF() const { return f; }
-
-	uint8_t getA_Alt() const { return a_alt; }
-	StatusFlags getF_Alt() const { return f_alt; }
-
-	const register16_t& getBC() const { return bc; }
-	const register16_t& getDE() const { return de; }
-	const register16_t& getHL() const { return hl; }
-
-	const register16_t& getBC_Alt() const { return bc_alt; }
-	const register16_t& getDE_Alt() const { return de_alt; }
-	const register16_t& getHL_Alt() const { return hl_alt; }
-
-	const register16_t& getIX() const { return ix; }
-	const register16_t& getIY() const { return iy; }
-
-	bool isInterruptable() const {
-		return m_interrupt;
-	}
-
-	void disableInterrupts() { m_interrupt = false; }
-	void enableInterrupts() { m_interrupt = true; }
-
-	void interrupt(uint8_t value) {
-		if (isInterruptable()) {
-			disableInterrupts();
-			switch (m_interruptMode) {
-			case 0:
-				execute(value);
-				break;
-			case 1:
-				restart(7);
-				cycles += 13;
-				break;
-			case 2:
-				pushWord(pc);
-				pc = Memory::makeWord(value, iv);
-				cycles += 19;
-				break;
-			}
-		}
-	}
-
-	bool isHalted() const { return m_halted; }
-	void halt() { m_halted = true; }
-
-	void initialise();
-
-	void reset();
+	void execute(uint8_t opcode);
 	void step();
 
+	const register16_t& getBC() const {
+		return m_registers[m_registerSet][BC_IDX];
+	}
+
+	const register16_t& getDE() const {
+		return m_registers[m_registerSet][DE_IDX];
+	}
+
+	const register16_t& getHL() const {
+		return m_registers[m_registerSet][HL_IDX];
+	}
+
+	const register16_t& getAF() const {
+		return m_accumulatorFlags[m_accumulatorFlagsSet];
+	}
+
+	const uint8_t& getA() const {
+		return getAF().high;
+	}
+
+	const uint8_t& getF() const {
+		return getAF().low;
+	}
+
+	// Mutable access to processor!!
+
+	register16_t& AF() {
+		return m_accumulatorFlags[m_accumulatorFlagsSet];
+	}
+
+	uint8_t& A() { return AF().high; }
+	uint8_t& F() { return AF().low; }
+
+	register16_t& BC() {
+		return m_registers[m_registerSet][BC_IDX];
+	}
+
+	uint8_t& B() { return BC().high; }
+	uint8_t& C() { return BC().low; }
+
+	register16_t& DE() {
+		return m_registers[m_registerSet][DE_IDX];
+	}
+
+	uint8_t& D() { return DE().high; }
+	uint8_t& E() { return DE().low; }
+
+	register16_t& HL() {
+		return m_registers[m_registerSet][HL_IDX];
+	}
+
+	uint8_t& H() { return HL().high; }
+	uint8_t& L() { return HL().low; }
+
+	register16_t& IX() { return m_ix; }
+	register16_t& IY() { return m_iy; }
+
+	uint8_t& REFRESH() { return m_refresh; }
+	uint8_t& IV() { return iv; }
+	int& IM() { return m_interruptMode; }
+	bool& IFF1() { return m_iff1; }
+	bool& IFF2() { return m_iff2; }
+
+	void exx() {
+		m_registerSet ^= 1;
+	}
+
+	void exxAF() {
+		m_accumulatorFlagsSet = !m_accumulatorFlagsSet;
+	}
+
+	virtual void reset();
+	virtual void initialise();
+
 private:
-	std::array<Instruction, 0x100> instructions;
-	std::map<uint8_t, std::array<Instruction, 0x100>> extendedInstructions;
+	enum { BC_IDX, DE_IDX, HL_IDX };
 
-	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
-	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
+	std::array<std::array<register16_t, 3>, 2> m_registers;
+	int m_registerSet;
 
-	Memory& m_memory;
-	InputOutput& m_ports;
+	std::array<register16_t, 2> m_accumulatorFlags;
+	int m_accumulatorFlagsSet;
 
-	uint64_t cycles;
+	register16_t m_ix;
+	register16_t m_iy;
 
-	uint16_t pc;
-	uint16_t sp;
-
-	uint8_t a;
-	uint8_t a_alt;
-	StatusFlags f;
-	StatusFlags f_alt;
-
+	uint8_t m_refresh;
 	uint8_t iv;
 	int m_interruptMode;
 	bool m_iff1;
 	bool m_iff2;
 
-	register16_t bc;
-	register16_t bc_alt;
+	bool m_prefixCB;
+	bool m_prefixDD;
+	bool m_prefixED;
+	bool m_prefixFD;
 
-	register16_t de;
-	register16_t de_alt;
+	int8_t m_displacement;
 
-	register16_t hl;
-	register16_t hl_alt;
+	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
+	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
 
-	register16_t ix;
-	register16_t iy;
+	void clearFlag(int flag) { F() &= ~flag; }
+	void setFlag(int flag) { F() |= flag; }
 
-	bool m_interrupt;
-	bool m_halted;
+	void setFlag(int flag, int condition) { setFlag(flag, condition != 0); }
+	void setFlag(int flag, uint32_t condition) { setFlag(flag, condition != 0); }
+	void setFlag(int flag, bool condition) { condition ? setFlag(flag) : clearFlag(flag); }
 
-	void execute(uint8_t opcode);
+	void clearFlag(int flag, int condition) { clearFlag(flag, condition != 0); }
+	void clearFlag(int flag, uint32_t condition) { clearFlag(flag, condition != 0); }
+	void clearFlag(int flag, bool condition) { condition ? clearFlag(flag) : setFlag(flag); }
 
-	void execute(const Instruction& instruction) {
-		instruction.vector();
-		cycles += instruction.count;
+	uint8_t& DISPLACED() {
+		if (!(m_prefixDD || m_prefixFD))
+			throw std::logic_error("Unprefixed indexed displacement requested");
+		auto address = (m_prefixDD ? m_ix.word : m_iy.word) + m_displacement;
+		return m_memory.reference(address);
 	}
 
-	void adjustSign(uint8_t value) { f.SF = ((value & 0x80) != 0); }
-	void adjustZero(uint8_t value) { f.ZF = (value == 0); }
-
-	void adjustParity(uint8_t value) {
-		static const uint8_t lookup[0x10] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
-		auto set = (lookup[value >> 4] + lookup[value & 0xF]);
-		f.PF = (set % 2) == 0;
+	uint8_t& R(int r, bool followPrefix = true) {
+		switch (r) {
+		case 0:
+			return B();
+		case 1:
+			return C();
+		case 2:
+			return D();
+		case 3:
+			return E();
+		case 4:
+			if (followPrefix) {
+				if (m_prefixDD)
+					return m_ix.high;
+				if (m_prefixFD)
+					return m_iy.high;
+			}
+			return H();
+		case 5:
+			if (followPrefix) {
+				if (m_prefixDD)
+					return m_ix.low;
+				if (m_prefixFD)
+					return m_iy.low;
+			}
+			return L();
+		case 6:
+			if (followPrefix) {
+				if (m_prefixDD || m_prefixFD) {
+					m_displacement = fetchByte();
+					return DISPLACED();
+				}
+			}
+			return m_memory.reference(HL().word);
+		case 7:
+			return A();
+		}
+		throw std::logic_error("Unhandled registry mechanism");
 	}
 
-	void adjustSZP(uint8_t value) {
-		adjustSign(value);
-		adjustZero(value);
-		adjustParity(value);
-	}
-
-	int buildHalfCarryIndex(uint8_t value, int calculation) {
-		return ((a & 0x88) >> 1) | ((value & 0x88) >> 2) | ((calculation & 0x88) >> 3);
-	}
-
-	void adjustHalfCarryAdd(uint8_t value, int calculation) {
-		auto index = buildHalfCarryIndex(value, calculation);
-		f.HF = m_halfCarryTableAdd[index & 0x7];
-	}
-
-	void adjustAuxiliaryCarrySub(uint8_t value, int calculation) {
-		auto index = buildHalfCarryIndex(value, calculation);
-		f.HF = !m_halfCarryTableSub[index & 0x7];
-	}
-
-	void postIncrement(uint8_t value) {
-		adjustSZP(value);
-		f.HF = (value & 0x0f) == 0;
-	}
-
-	void postDecrement(uint8_t value) {
-		adjustSZP(value);
-		f.HF = (value & 0x0f) != 0xf;
-	}
-
-	void pushWord(uint16_t value);
-	uint16_t popWord();
-
-	uint8_t fetchByte() {
-		return m_memory.get(pc++);
-	}
-
-	uint16_t fetchWord() {
-		auto value = m_memory.getWord(pc);
-		pc += 2;
-		return value;
-	}
-
-	static Instruction INS(instruction_t method, AddressingMode mode, std::string disassembly, uint64_t cycles);
-	Instruction UNKNOWN();
-
-	void installInstructions();
-	void installInstructionsCB();
-	void installInstructionsDD();
-	void installInstructionsED();
-	void installInstructionsFD();
-
-	//
-
-	void compare(uint8_t value) {
-		uint16_t subtraction = a - value;
-		adjustSZP((uint8_t)subtraction);
-		adjustAuxiliaryCarrySub(value, subtraction);
-		f.CF = subtraction > 0xff;
-	}
-
-	void callAddress(uint16_t address) {
-		pushWord(pc + 2);
-		pc = address;
-	}
-
-	void restart(uint8_t position) {
-		uint16_t address = position << 3;
-		pushWord(pc);
-		pc = address;
-	}
-
-	void callConditional(int condition) {
-		if (condition) {
-			call();
-			cycles += 6;
-		} else {
-			pc += 2;
+	uint16_t& RP(int rp) {
+		switch (rp) {
+		case 3:
+			return sp;
+		case HL_IDX:
+			if (m_prefixDD)
+				return m_ix.word;
+			if (m_prefixFD)
+				return m_iy.word;
+		default:
+			return m_registers[m_registerSet][rp].word;
 		}
 	}
 
-	void returnConditional(int condition) {
-		if (condition) {
-			ret();
-			cycles += 6;
+	uint16_t& RP2(int rp) {
+		switch (rp) {
+		case 3:
+			return AF().word;
+		case HL_IDX:
+			if (m_prefixDD)
+				return m_ix.word;
+			if (m_prefixFD)
+				return m_iy.word;
+		default:
+			return m_registers[m_registerSet][rp].word;
 		}
 	}
 
-	void jmpConditional(int conditional) {
-		auto destination = fetchWord();
-		if (conditional)
-			pc = destination;
+	int buildHalfCarryIndex(uint8_t before, uint8_t value, int calculation) {
+		return ((before & 0x88) >> 1) | ((value & 0x88) >> 2) | ((calculation & 0x88) >> 3);
 	}
 
-	void jrConditional(int conditional) {
-		auto offset = (int8_t)fetchByte();
-		if (conditional) {
-			pc += offset;
-			cycles += 5;
-		}
+	void adjustHalfCarryAdd(uint8_t before, uint8_t value, int calculation) {
+		auto index = buildHalfCarryIndex(before, value, calculation);
+		setFlag(HC, m_halfCarryTableAdd[index & 0x7]);
 	}
 
-	void anda(uint8_t value) {
-		f.HF = (((a | value) & 0x8) != 0);
-		f.CF = false;
-		adjustSZP(a &= value);
+	void adjustHalfCarrySub(uint8_t before, uint8_t value, int calculation) {
+		auto index = buildHalfCarryIndex(before, value, calculation);
+		setFlag(HC, m_halfCarryTableSub[index & 0x7]);
 	}
 
-	void ora(uint8_t value) {
-		f.HF = f.CF = false;
-		adjustSZP(a |= value);
-	}
-
-	void xra(uint8_t value) {
-		f.HF = f.CF = false;
-		adjustSZP(a ^= value);
-	}
-
-	void add(uint8_t value) {
-		uint16_t sum = a + value;
-		a = Memory::lowByte(sum);
-		f.CF = sum > 0xff;
-		adjustSZP(a);
-		adjustHalfCarryAdd(value, sum);
-	}
-
-	void adc(uint8_t value) {
-		add(value + f.CF);
-	}
-
-	void dad(register16_t& destination, uint16_t addition) {
-		uint32_t result = destination.word + addition;
-		auto result16 = result >> 16;
-		auto result8 = result >> 8;
-		uint8_t flags = f;
-		flags = (flags & (StatusFlags::Sign | StatusFlags::Zero | StatusFlags::Overflow))
-			| (((destination.word ^ result ^ addition) >> 8) & StatusFlags::HalfCarry)
-			| (result16 & StatusFlags::Carry)
-			| (result8 & (StatusFlags::YFlag | StatusFlags::XFlag));
-		destination.word = (uint16_t)result;
-		f = flags;
-	}
-
-	void dad_hl(uint16_t value) { dad(hl, value); }
-	void dad_ix(uint16_t value) { dad(ix, value); }
-	void dad_iy(uint16_t value) { dad(iy, value); }
-
-	void adc(uint16_t value) {
-		auto flags = (uint8_t)f;
-		uint32_t result = hl.word + value + (flags & StatusFlags::Carry);
-		auto result16 = result >> 16;
-		auto result8 = result >> 8;
-		flags = (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry) |
-			(result16 & StatusFlags::Carry) |
-			(result8 & (StatusFlags::Sign | StatusFlags::YFlag | StatusFlags::XFlag)) |
-			((result & 0xffff) ? 0 : StatusFlags::Zero) |
-			(((value ^ hl.word ^ 0x8000) & (value ^ result) & 0x8000) >> 13);
-		hl.word = (uint16_t)result;
-		f = flags;
-	}
-
-	void subByte(uint8_t value) {
-		uint16_t difference = a - value;
-		a = Memory::lowByte(difference);
-		f.CF = difference > 0xff;
-		adjustSZP(a);
-		adjustAuxiliaryCarrySub(value, difference);
-	}
-
-	void sbc(uint16_t value) {
-		auto flags = (uint8_t)f;
-		uint32_t result = hl.word - value - (flags & StatusFlags::Carry);
-		auto result16 = result >> 16;
-		auto result8 = result >> 8;
-		flags =
-			  (((hl.word ^ result ^ value) >> 8) & StatusFlags::HalfCarry)
-			| StatusFlags::Subtract
-			| (result16 & StatusFlags::Carry)
-			| (result8 & (StatusFlags::Sign | StatusFlags::YFlag | StatusFlags::XFlag))	// straight from the result high byte
-			| ((result & 0xffff) ? 0 : StatusFlags::Zero) |
-			  (((value ^ hl.word) & (hl.word ^ result) & 0x8000) >> 13);	// No idea what this does!
-		hl.word = (uint16_t)result;
-		f = flags;
-	}
-
-	void sbb(uint8_t value) {
-		subByte(value + f.CF);
-	}
-
-	void mov_m_r(uint8_t value) {
-		m_memory.set(hl.word, value);
-	}
-
-	uint8_t mov_r_m() {
-		return m_memory.get(hl.word);
-	}
-
-	//
-
-	uint8_t loadByteAddressRelative(uint16_t address) {
-		auto offset = (int8_t)fetchByte();
-		return m_memory.get(address + offset);
-	}
-
-	//
-
-	uint8_t resetNthBit(uint8_t value, int n) {
-		auto mask = 1 << n;
-		return value & ~mask;
-	}
-
-	void resetNthBitM(int n) {
-		auto current = m_memory.get(hl.word);
-		auto result = resetNthBit(current, n);
-		m_memory.set(hl.word, result);
-	}
-
-	uint8_t setNthBit(uint8_t value, int n) {
-		auto mask = 1 << n;
-		return value | mask;
-	}
-
-	void setNthBitM(int n) {
-		auto current = m_memory.get(hl.word);
-		auto result = setNthBit(current, n);
-		m_memory.set(hl.word, result);
-	}
-
-	//
-
-	void ___();
-
-	// Move, load, and store
-
-	void mov_a_a() { }
-	void mov_a_b() { a = bc.high; }
-	void mov_a_c() { a = bc.low; }
-	void mov_a_d() { a = de.high; }
-	void mov_a_e() { a = de.low; }
-	void mov_a_h() { a = hl.high; }
-	void mov_a_l() { a = hl.low; }
-
-	void mov_b_a() { bc.high = a; }
-	void mov_b_b() { }
-	void mov_b_c() { bc.high = bc.low; }
-	void mov_b_d() { bc.high = de.high; }
-	void mov_b_e() { bc.high = de.low; }
-	void mov_b_h() { bc.high = hl.high; }
-	void mov_b_l() { bc.high = hl.low; }
-
-	void mov_c_a() { bc.low = a; }
-	void mov_c_b() { bc.low = bc.high; }
-	void mov_c_c() { }
-	void mov_c_d() { bc.low = de.high; }
-	void mov_c_e() { bc.low = de.low; }
-	void mov_c_h() { bc.low = hl.high; }
-	void mov_c_l() { bc.low = hl.low; }
-
-	void mov_d_a() { de.high = a; }
-	void mov_d_b() { de.high = bc.high; }
-	void mov_d_c() { de.high = bc.low; }
-	void mov_d_d() { }
-	void mov_d_e() { de.high = de.low; }
-	void mov_d_h() { de.high = hl.high; }
-	void mov_d_l() { de.high = hl.low; }
-
-	void mov_e_a() { de.low = a; }
-	void mov_e_b() { de.low = bc.high; }
-	void mov_e_c() { de.low = bc.low; }
-	void mov_e_d() { de.low = de.high; }
-	void mov_e_e() { }
-	void mov_e_h() { de.low = hl.high; }
-	void mov_e_l() { de.low = hl.low; }
-
-	void mov_h_a() { hl.high = a; }
-	void mov_h_b() { hl.high = bc.high; }
-	void mov_h_c() { hl.high = bc.low; }
-	void mov_h_d() { hl.high = de.high; }
-	void mov_h_e() { hl.high = de.low; }
-	void mov_h_h() { }
-	void mov_h_l() { hl.high = hl.low; }
-
-	void mov_l_a() { hl.low = a; }
-	void mov_l_b() { hl.low = bc.high; }
-	void mov_l_c() { hl.low = bc.low; }
-	void mov_l_d() { hl.low = de.high; }
-	void mov_l_e() { hl.low = de.low; }
-	void mov_l_h() { hl.low = hl.high; }
-	void mov_l_l() { }
-
-	void mov_m_a() { mov_m_r(a); }
-	void mov_m_b() { mov_m_r(bc.high); }
-	void mov_m_c() { mov_m_r(bc.low); }
-	void mov_m_d() { mov_m_r(de.high); }
-	void mov_m_e() { mov_m_r(de.low); }
-	void mov_m_h() { mov_m_r(hl.high); }
-	void mov_m_l() { mov_m_r(hl.low); }
-
-	void mov_a_m() { a = mov_r_m(); }
-	void mov_b_m() { bc.high = mov_r_m(); }
-	void mov_c_m() { bc.low = mov_r_m(); }
-	void mov_d_m() { de.high = mov_r_m(); }
-	void mov_e_m() { de.low = mov_r_m(); }
-	void mov_h_m() { hl.high = mov_r_m(); }
-	void mov_l_m() { hl.low = mov_r_m(); }
-
-	void mov_i_a() { iv = a; }
-
-	void mvi_a() { a = fetchByte(); }
-	void mvi_b() { bc.high = fetchByte(); }
-	void mvi_c() { bc.low = fetchByte(); }
-	void mvi_d() { de.high = fetchByte(); }
-	void mvi_e() { de.low = fetchByte(); }
-	void mvi_h() { hl.high = fetchByte(); }
-	void mvi_l() { hl.low = fetchByte(); }
-
-	void mvi_m() {
-		auto data = fetchByte();
-		m_memory.set(hl.word, data);
-	}
-
-	void mov_a_ix_i() { a = loadByteAddressRelative(ix.word); }
-	void mov_a_iy_i() { a = loadByteAddressRelative(iy.word); }
-
-	void mov_iy_i_imm() {
-		int8_t displacement = fetchByte();
-		auto address = iy.word + displacement;
-		auto value = fetchByte();
-		m_memory.set(address, value);
-	}
-
-	void lxi_b() { bc.word = fetchWord(); }
-	void lxi_d() { de.word = fetchWord(); }
-	void lxi_h() { hl.word = fetchWord(); }
-
-	void lxi_ix() { ix.word = fetchWord(); }
-	void lxi_iy() { iy.word = fetchWord(); }
-	
-	void stax_b() { m_memory.set(bc.word, a); }
-	void stax_d() { m_memory.set(de.word, a); }
-
-	void ldax_b() { a = m_memory.get(bc.word); }
-	void ldax_d() { a = m_memory.get(de.word); }
-
-	void sta() {
-		auto destination = fetchWord();
-		m_memory.set(destination, a);
-	}
-
-	void lda() {
-		auto source = fetchWord();
-		a = m_memory.get(source);
-	}
-
-	void shld() {
-		auto destination = fetchWord();
-		m_memory.setWord(destination, hl.word);
-	}
-
-	void lhld() {
-		auto source = fetchWord();
-		hl.word = m_memory.getWord(source);
-	}
-
-	void xchg() {
-		std::swap(de, hl);
-	}
-
-	void mov_m_sp() {
-		auto address = fetchWord();
-		m_memory.setWord(address, sp);
-	}
-
-	void mov_sp_m() {
-		auto address = fetchWord();
-		sp = m_memory.getWord(address);
-	}
-
-	// stack ops
-
-	void push_b() { pushWord(bc.word); }
-	void push_d() { pushWord(de.word); }
-	void push_h() { pushWord(hl.word); }
-
-	void push_ix() { pushWord(ix.word); }
-	void push_iy() { pushWord(iy.word); }
-
-	void push_psw() {
-		auto pair = Memory::makeWord(f, a);
-		pushWord(pair);
-	}
-
-	void pop_b() { bc.word = popWord(); }
-	void pop_d() { de.word = popWord(); }
-	void pop_h() { hl.word = popWord(); }
-
-	void pop_ix() { ix.word = popWord(); }
-	void pop_iy() { iy.word = popWord(); }
-
-	void pop_psw() {
-		auto af = popWord();
-		a = Memory::highByte(af);
-		f = Memory::lowByte(af);
-	}
-
-	void xhtl() {
-		auto tos = m_memory.getWord(sp);
-		m_memory.setWord(sp, hl.word);
-		hl.word = tos;
-	}
-
-	void sphl() {
-		sp = hl.word;
-	}
-
-	void lxi_sp() {
-		sp = fetchWord();
-	}
-
-	void inx_sp() { ++sp; }
-	void dcx_sp() { --sp; }
-
-	// jump
-
-	void jmp() { jmpConditional(true); }
-
-	void jc() { jmpConditional(f.CF); }
-	void jnc() { jmpConditional(!f.CF); }
-
-	void jz() { jmpConditional(f.ZF); }
-	void jnz() { jmpConditional(!f.ZF); }
-
-	void jpe() { jmpConditional(f.PF); }
-	void jpo() { jmpConditional(!f.PF); }
-
-	void jm() { jmpConditional(f.SF); }
-	void jp() { jmpConditional(!f.SF); }
-
-	void pchl() { pc = hl.word; }
-
-	void jp_ix() { pc = ix.word; }
-	void jp_iy() { pc = iy.word; }
+	void executeCB(int x, int y, int z, int p, int q);
+	void executeED(int x, int y, int z, int p, int q);
+	void executeOther(int x, int y, int z, int p, int q);
 
-	void jr() { jrConditional(true); }
+	void adjustSign(uint8_t value);
+	void adjustZero(uint8_t value);
+	void adjustParity(uint8_t value);
+	void adjustSZP(uint8_t value);
 
-	void djnz() { jrConditional(--bc.high); }
+	void adjustXYFlags(uint8_t value);
 
-	void jrz() { jrConditional(f.ZF); }
-	void jrnz() { jrConditional(!f.ZF); }
+	void postIncrement(uint8_t value);
+	void postDecrement(uint8_t value);
 
-	void jrc() { jrConditional(f.CF); }
-	void jrnc() { jrConditional(!f.CF); }
+	void restart(uint8_t position);
 
-	// call
+	void jrConditional(int conditional);
+	void jrConditionalFlag(int flag);
 
-	void call() {
-		auto destination = m_memory.getWord(pc);
-		callAddress(destination);
-	}
-
-	void cc() { callConditional(f.CF); }
-	void cnc() { callConditional(!f.CF); }
-
-	void cpe() { callConditional(f.PF); }
-	void cpo() { callConditional(!f.PF); }
-
-	void cz() { callConditional(f.ZF); }
-	void cnz() { callConditional(!f.ZF); }
-
-	void cm() { callConditional(f.SF); }
-	void cp() { callConditional(!f.SF); }
-
-	// return
-
-	void ret() {
-		pc = popWord();
-	}
-
-	void rc() { returnConditional(f.CF); }
-	void rnc() { returnConditional(!f.CF); }
-
-	void rz() { returnConditional(f.ZF); }
-	void rnz() { returnConditional(!f.ZF); }
-
-	void rpe() { returnConditional(f.PF); }
-	void rpo() { returnConditional(!f.PF); }
-
-	void rm() { returnConditional(f.SF); }
-	void rp() { returnConditional(!f.SF); }
-
-	// restart
-
-	void rst_0() { restart(0); }
-	void rst_1() { restart(1); }
-	void rst_2() { restart(2); }
-	void rst_3() { restart(3); }
-	void rst_4() { restart(4); }
-	void rst_5() { restart(5); }
-	void rst_6() { restart(6); }
-	void rst_7() { restart(7); }
-
-	// increment and decrement
-
-	void inr_a() { postIncrement(++a); }
-	void inr_b() { postIncrement(++bc.high); }
-	void inr_c() { postIncrement(++bc.low); }
-	void inr_d() { postIncrement(++de.high); }
-	void inr_e() { postIncrement(++de.low); }
-	void inr_h() { postIncrement(++hl.high); }
-	void inr_l() { postIncrement(++hl.low); }
-
-	void inr_m() {
-		auto value = m_memory.get(hl.word);
-		postIncrement(++value);
-		m_memory.set(hl.word, value);
-	}
-
-	void dcr_a() { postDecrement(--a); }
-	void dcr_b() { postDecrement(--bc.high); }
-	void dcr_c() { postDecrement(--bc.low); }
-	void dcr_d() { postDecrement(--de.high); }
-	void dcr_e() { postDecrement(--de.low); }
-	void dcr_h() { postDecrement(--hl.high); }
-	void dcr_l() { postDecrement(--hl.low); }
-
-	void dcr_m() {
-		auto value = m_memory.get(hl.word);
-		postDecrement(--value);
-		m_memory.set(hl.word, value);
-	}
-
-	void inx_b() { ++bc.word; }
-	void inx_d() { ++de.word; }
-	void inx_h() { ++hl.word; }
-
-	void inx_ix() { ++ix.word; }
-	void inx_iy() { ++iy.word; }
-
-	void dcx_b() { --bc.word; }
-	void dcx_d() { --de.word; }
-	void dcx_h() { --hl.word; }
-
-	// add
-
-	void add_a() { add(a); }
-	void add_b() { add(bc.high); }
-	void add_c() { add(bc.low); }
-	void add_d() { add(de.high); }
-	void add_e() { add(de.low); }
-	void add_h() { add(hl.high); }
-	void add_l() { add(hl.low); }
-
-	void add_m() {
-		auto value = m_memory.get(hl.word);
-		add(value);
-	}
-
-	void adi() { add(fetchByte()); }
-
-	void add_a_ixh() { add(ix.high); }
-	void add_a_ixl() { add(ix.low); }
-
-	void add_a_iyh() { add(iy.high); }
-	void add_a_iyl() { add(iy.low); }
-
-	void adc_a() { adc(a); }
-	void adc_b() { adc(bc.high); }
-	void adc_c() { adc(bc.low); }
-	void adc_d() { adc(de.high); }
-	void adc_e() { adc(de.low); }
-	void adc_h() { adc(hl.high); }
-	void adc_l() { adc(hl.low); }
-
-	void adc_m() {
-		auto value = m_memory.get(hl.word);
-		adc(value);
-	}
-
-	void aci() { adc(fetchByte()); }
-
-	void adc_a_ixh() { adc(ix.high); }
-	void adc_a_ixl() { adc(ix.low); }
-
-	void adc_a_iyh() { adc(iy.high); }
-	void adc_a_iyl() { adc(iy.low); }
-
-	void dad_b() { dad_hl(bc.word); }
-	void dad_d() { dad_hl(de.word); }
-	void dad_h() { dad_hl(hl.word); }
-	void dad_sp() { dad_hl(sp); }
-
-	void add_ix_bc() { dad_ix(bc.word); }
-	void add_ix_de() { dad_ix(de.word); }
-	void add_ix_ix() { dad_ix(ix.word); }
-	void add_ix_sp() { dad_ix(sp); }
-
-	void add_iy_bc() { dad_iy(bc.word); }
-	void add_iy_de() { dad_iy(de.word); }
-	void add_iy_iy() { dad_iy(iy.word); }
-	void add_iy_sp() { dad_iy(sp); }
-
-	void adc_hl_bc() { adc(bc.word); }
-	void adc_hl_de() { adc(de.word); }
-	void adc_hl_hl() { adc(hl.word); }
-	void adc_hl_sp() { adc(sp); }
-
-	// subtract
-
-	void sub_a() { subByte(a); }
-	void sub_b() { subByte(bc.high); }
-	void sub_c() { subByte(bc.low); }
-	void sub_d() { subByte(de.high); }
-	void sub_e() { subByte(de.low); }
-	void sub_h() { subByte(hl.high); }
-	void sub_l() { subByte(hl.low); }
-
-	void sub_m() {
-		auto value = m_memory.get(hl.word);
-		subByte(value);
-	}
-
-	void sub_ixh() { subByte(ix.high); }
-	void sub_ixl() { subByte(ix.low); }
-
-	void sub_iyh() { subByte(iy.high); }
-	void sub_iyl() { subByte(iy.low); }
-
-	void sbb_a() { sbb(a); }
-	void sbb_b() { sbb(bc.high); }
-	void sbb_c() { sbb(bc.low); }
-	void sbb_d() { sbb(de.high); }
-	void sbb_e() { sbb(de.low); }
-	void sbb_h() { sbb(hl.high); }
-	void sbb_l() { sbb(hl.low); }
-
-	void sbb_m() {
-		auto value = m_memory.get(hl.word);
-		sbb(value);
-	}
-
-	void sbc_a_ixh() { sbb(ix.high); }
-	void sbc_a_ixl() { sbb(ix.low); }
-
-	void sbc_a_iyh() { sbb(iy.high); }
-	void sbc_a_iyl() { sbb(iy.low); }
-
-	void sbi() {
-		auto value = fetchByte();
-		sbb(value);
-	}
-
-	void sui() {
-		auto value = fetchByte();
-		subByte(value);
-	}
-
-	void sbc_hl_bc() { sbc(bc.word); }
-	void sbc_hl_de() { sbc(de.word); }
-	void sbc_hl_hl() { sbc(hl.word); }
-	void sbc_hl_sp() { sbc(sp); }
-
-	// logical
-
-	void ana_a() { anda(a); }
-	void ana_b() { anda(bc.high); }
-	void ana_c() { anda(bc.low); }
-	void ana_d() { anda(de.high); }
-	void ana_e() { anda(de.low); }
-	void ana_h() { anda(hl.high); }
-	void ana_l() { anda(hl.low); }
-
-	void ana_m() {
-		auto value = m_memory.get(hl.word);
-		anda(value);
-	}
-
-	void ani() { anda(fetchByte()); }
-
-	void and_ixh() { anda(ix.high); }
-	void and_ixl() { anda(ix.low); }
-
-	void and_iyh() { anda(iy.high); }
-	void and_iyl() { anda(iy.low); }
-
-	void xra_a() { xra(a); }
-	void xra_b() { xra(bc.high); }
-	void xra_c() { xra(bc.low); }
-	void xra_d() { xra(de.high); }
-	void xra_e() { xra(de.low); }
-	void xra_h() { xra(hl.high); }
-	void xra_l() { xra(hl.low); }
-
-	void xra_m() {
-		auto value = m_memory.get(hl.word);
-		xra(value);
-	}
-
-	void xri() { xra(fetchByte()); }
-
-	void xor_ixh() { xra(ix.high); }
-	void xor_ixl() { xra(ix.low); }
-
-	void xor_iyh() { xra(iy.high); }
-	void xor_iyl() { xra(iy.low); }
-
-	void ora_a() { ora(a); }
-	void ora_b() { ora(bc.high); }
-	void ora_c() { ora(bc.low); }
-	void ora_d() { ora(de.high); }
-	void ora_e() { ora(de.low); }
-	void ora_h() { ora(hl.high); }
-	void ora_l() { ora(hl.low); }
-
-	void ora_m() {
-		auto value = m_memory.get(hl.word);
-		ora(value);
-	}
-
-	void ori() { ora(fetchByte()); }
-
-	void or_ixh() { ora(ix.high); }
-	void or_ixl() { ora(ix.low); }
-
-	void or_iyh() { ora(iy.high); }
-	void or_iyl() { ora(iy.low); }
-
-	void cmp_a() { compare(a); }
-	void cmp_b() { compare(bc.high); }
-	void cmp_c() { compare(bc.low); }
-	void cmp_d() { compare(de.high); }
-	void cmp_e() { compare(de.low); }
-	void cmp_h() { compare(hl.high); }
-	void cmp_l() { compare(hl.low); }
-
-	void cmp_m() {
-		auto value = m_memory.get(hl.word);
-		compare(value);
-	}
-
-	void cpi() { compare(fetchByte()); }
-
-	void cp_ixh() { compare(ix.high); }
-	void cp_ixl() { compare(ix.low); }
-
-	void cp_iyh() { compare(iy.high); }
-	void cp_iyl() { compare(iy.low); }
-
-	// rotate
-
-	void rlc() {
-		auto carry = a & 0x80;
-		a <<= 1;
-		a |= carry >> 7;
-		f.CF = carry != 0;
-	}
+	void ret();
+	void retn();
+	void reti();
 
-	void rrc() {
-		auto carry = a & 1;
-		a >>= 1;
-		a |= carry << 7;
-		f.CF = carry != 0;
-	}
-
-	void ral() {
-		auto carry = a & 0x80;
-		a <<= 1;
-		a |= (uint8_t)f.CF;
-		f.CF = carry != 0;
-	}
-
-	void rar() {
-		auto carry = a & 1;
-		a >>= 1;
-		a |= f.CF << 7;
-		f.CF = carry != 0;
-	}
+	void returnConditional(int condition);
+	void returnConditionalFlag(int flag);
 
-	// specials
+	void jumpConditional(int condition);
+	void jumpConditionalFlag(int flag);
 
-	void cma() {
-		a ^= 0xff;
-	}
+	void callAddress(uint16_t address);
+	void call();
+	void callConditional(int condition);
+	void callConditionalFlag(int flag);
 
-	void stc() {
-		f.CF = true;
-	}
+	uint16_t sbc(uint16_t value);
+	uint16_t adc(uint16_t value);
 
-	void cmc() {
-		f.CF = !f.CF;
-	}
+	uint16_t add(uint16_t value);
 
-	void daa() {
-		auto carry = f.CF;
-		uint8_t addition = 0;
-		if (f.HF || (a & 0xf) > 9) {
-			addition = 0x6;
-		}
-		if (f.CF || (a >> 4) > 9 || ((a >> 4) >= 9 && (a & 0xf) > 9)) {
-			addition |= 0x60;
-			carry = true;
-		}
-		add(addition);
-		f.CF = carry;
-	}
+	uint8_t sbc(uint8_t value);
+	uint8_t adc(uint8_t value);
 
-	// input/output
+	uint8_t sub(uint8_t value);
+	uint8_t add(uint8_t value);
 
-	void out() {
-		auto port = fetchByte();
-		m_ports.write(port, a);
-	}
+	void andr(uint8_t& operand, uint8_t value);
 
-	void in() {
-		auto port = fetchByte();
-		a = m_ports.read(port);
-	}
+	void anda(uint8_t value);
+	void xora(uint8_t value);
+	void ora(uint8_t value);
+	void compare(uint8_t value);
 
-	void in_b_c() { bc.high = m_ports.read(bc.low); }
-	void in_d_c() { de.high = m_ports.read(bc.low); }
-	void in_h_c() { hl.high = m_ports.read(bc.low); }
+	void rlca();
+	void rrca();
+	void rla();
+	void rra();
 
-	void out_c_b() { m_ports.write(bc.low, bc.high); }
-	void out_c_d() { m_ports.write(bc.low, de.high); }
-	void out_c_h() { m_ports.write(bc.low, hl.high); }
+	void rlc(uint8_t& operand);
+	void rrc(uint8_t& operand);
+	void rl(uint8_t& operand);
+	void rr(uint8_t& operand);
+	void sla(uint8_t& operand);
+	void sra(uint8_t& operand);
+	void sll(uint8_t& operand);
+	void srl(uint8_t& operand);
 
-	// control
+	void bit(int n, uint8_t& operand);
+	void res(int n, uint8_t& operand);
+	void set(int nit, uint8_t& operand);
 
-	void ei() { enableInterrupts(); }
-	void di() { disableInterrupts(); }
+	void daa();
 
-	void nop() {}
+	void scf();
+	void ccf();
+	void cpl();
 
-	void hlt() {
-		m_halted = true;
-	}
+	void xhtl(register16_t& operand);
+	void xhtl();
 
-	// alternate register set
+	void cpi();
+	void cpir();
 
-	void ex_af_afa() {
-		std::swap(a, a_alt);
-		std::swap(f, f_alt);
-	}
+	void cpd();
+	void cpdr();
 
-	void exx() {
-		std::swap(bc, bc_alt);
-		std::swap(de, de_alt);
-		std::swap(hl, hl_alt);
-	}
+	void ldi();
+	void ldir();
 
-	// block operations
+	void ldd();
+	void lddr();
 
-	void ldi() {
-		m_memory.set(de.word++, m_memory.get(hl.word++));
-		--bc.word;
-		f.NF = f.HF = false;
-		f.PF = bc.word != 0;
-	}
+	void ini();
+	void inir();
 
-	void ldir() {
-		ldi();
-		if (f.PF) {		// See LDI
-			cycles += 5;
-			pc -= 2;
-		}
-	}
+	void ind();
+	void indr();
 
-	// interrupts
+	void outi();
+	void otir();
 
-	void im_0() {
-		m_interruptMode = 0;
-	}
+	void outd();
+	void otdr();
 
-	void im_1() {
-		m_interruptMode = 1;
-	}
+	void neg();
 
-	void im_2() {
-		m_interruptMode = 2;
-	}
+	void rrd();
+	void rld();
 
-	// bit operations
-
-	void set_0_m() { setNthBitM(0); }
-	void set_1_m() { setNthBitM(1); }
-	void set_2_m() { setNthBitM(2); }
-	void set_3_m() { setNthBitM(3); }
-	void set_4_m() { setNthBitM(4); }
-	void set_5_m() { setNthBitM(5); }
-	void set_6_m() { setNthBitM(6); }
-	void set_7_m() { setNthBitM(7); }
-
-	void res_0_m() { resetNthBitM(0); }
-	void res_1_m() { resetNthBitM(1); }
-	void res_2_m() { resetNthBitM(2); }
-	void res_3_m() { resetNthBitM(3); }
-	void res_4_m() { resetNthBitM(4); }
-	void res_5_m() { resetNthBitM(5); }
-	void res_6_m() { resetNthBitM(6); }
-	void res_7_m() { resetNthBitM(7); }
+	void readPort(uint8_t& operand, uint8_t port);
 };

@@ -150,6 +150,7 @@
     <ClInclude Include="EventArgs.h" />
     <ClInclude Include="Computer.h" />
     <ClInclude Include="InputOutput.h" />
+    <ClInclude Include="Processor.h" />
     <ClInclude Include="Z80.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="PortEventArgs.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="InputOutput.cpp" />
+    <ClCompile Include="Processor.cpp" />
     <ClCompile Include="Z80.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="Profiler.cpp" />

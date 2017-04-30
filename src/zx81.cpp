@@ -9,15 +9,16 @@ int main(int, char*[])
 
 #ifdef _DEBUG
 	configuration.setDebugMode(true);
+	//configuration.setProfileMode(true);
 #endif
+	configuration.setDebugMode(true);
 
 	Computer computer(configuration);
 	computer.initialise();
 
 	try {
 		computer.runLoop();
-	}
-	catch (std::exception& error) {
+	} catch (const std::exception& error) {
 		::SDL_LogError(::SDL_LOG_CATEGORY_APPLICATION, "%s", error.what());
 		return 2;
 	}

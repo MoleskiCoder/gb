@@ -33,10 +33,10 @@ private:
 	Profiler m_profiler;
 	Disassembler m_disassembler;
 
-	void Cpu_ExecutingInstruction_Cpm(const CpuEventArgs& cpuEvent);
+	void Cpu_ExecutingInstruction_Cpm(const Z80& cpu);
 
-	void Cpu_ExecutingInstruction_Debug(const CpuEventArgs& cpuEvent);
-	void Cpu_ExecutingInstruction_Profile(const CpuEventArgs& cpuEvent);
+	void Cpu_ExecutingInstruction_Debug(const Z80& cpu);
+	void Cpu_ExecutingInstruction_Profile(const Z80& cpu);
 
 	void bdos();
 };
