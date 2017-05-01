@@ -272,7 +272,7 @@ private:
 	void postIncrement(uint8_t value);
 	void postDecrement(uint8_t value);
 
-	void restart(uint8_t position);
+	void restart(uint8_t address);
 
 	void jrConditional(int conditional);
 	void jrConditionalFlag(int flag);

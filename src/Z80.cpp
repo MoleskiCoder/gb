@@ -73,20 +73,26 @@ void Z80::enableInterrupts() {
 
 void Z80::interrupt(bool maskable, uint8_t value) {
 	if (!maskable || (maskable && IFF1())) {
-		maskable ? disableInterrupts() : IFF1() = 0;
-		switch (IM()) {
-		case 0:
-			execute(value);
-			break;
-		case 1:
-			restart(7);
+		if (maskable) {
+			disableInterrupts();
+			switch (IM()) {
+			case 0:
+				execute(value);
+				break;
+			case 1:
+				restart(7 << 3);
+				cycles += 13;
+				break;
+			case 2:
+				pushWord(pc);
+				pc = makeWord(value, IV());
+				cycles += 19;
+				break;
+			}
+		} else {
+			IFF1() = 0;
+			restart(0x66);
 			cycles += 13;
-			break;
-		case 2:
-			pushWord(pc);
-			pc = makeWord(value, IV());
-			cycles += 19;
-			break;
 		}
 	}
 }
@@ -135,8 +141,7 @@ void Z80::postDecrement(uint8_t value) {
 	clearFlag(HC, lowNibble(value + 1));
 }
 
-void Z80::restart(uint8_t position) {
-	uint16_t address = position << 3;
+void Z80::restart(uint8_t address) {
 	pushWord(pc);
 	setPcViaMemptr(address);
 }
@@ -1139,14 +1144,15 @@ void Z80::executeED(int x, int y, int z, int p, int q) {
 		break;
 	case 1:
 		switch (z) {
-		case 0:	// Input from port with 16-bit address
-			if (y == 6) {	// IN (C)
-				uint8_t value;
-				readPort(value, C());
-			} else {		// IN r[y],(C)
-				readPort(R(y), C());
+		case 0: { // Input from port with 16-bit address
+				if (y == 6) {	// IN (C)
+					uint8_t value;
+					readPort(value, C());
+				} else {		// IN r[y],(C)
+					readPort(R(y), C());
+				}
+				cycles += 12;
 			}
-			cycles += 12;
 			break;
 		case 1:	// Output to port with 16-bit address
 			if (y == 6)	// OUT (C),0
@@ -1687,7 +1693,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			cycles += 7;
 			break;
 		case 7:	// Restart: RST y * 8
-			restart(y);
+			restart(y << 3);
 			cycles += 11;
 			break;
 		}
