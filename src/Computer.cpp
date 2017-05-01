@@ -118,7 +118,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		runRasterScan();
+		//runRasterScan();
 
 		if (m_configuration.isDrawGraphics())
 			drawFrame();
@@ -165,6 +165,26 @@ bool Computer::finishedCycling(int limit, int cycles) const {
 
 void Computer::drawFrame() {
 	
+	// vertical timings
+
+	auto upperBlanking = 56;
+	auto displayArea = 192;
+	auto lowerBlanking = 56;
+	auto verticalRetrace = 6;
+	if (m_configuration.getCyclesPerFrame() == 60) {
+		upperBlanking = 32;
+		displayArea = 192;
+		lowerBlanking = 32;
+		verticalRetrace = 6;
+	}
+
+	auto totalScanLines = upperBlanking + displayArea + lowerBlanking + verticalRetrace;
+
+	for (int scanLine = 0; scanLine < totalScanLines; ++scanLine) {
+		m_board.triggerHorizontalRetraceInterrupt();
+		m_board.runScanLine();
+	}
+
 	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_pixels[0], DisplayWidth * sizeof(Uint32)), "Unable to update texture: ");
 
 	verifySDLCall(

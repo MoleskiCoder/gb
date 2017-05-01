@@ -22,6 +22,11 @@ public:
 
 	void disableInterrupts();
 	void enableInterrupts();
+
+	void interruptMaskable(uint8_t value) { interrupt(true, value); }
+	void interruptMaskable() { interruptMaskable(0); }
+	void interruptNonMaskable() { interrupt(false, 0); }
+
 	void interrupt(bool maskable, uint8_t value);
 
 	void execute(uint8_t opcode);

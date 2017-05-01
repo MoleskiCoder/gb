@@ -6,6 +6,7 @@
 #include "InputOutput.h"
 #include "Configuration.h"
 #include "Z80.h"
+#include "Ula.h"
 #include "Profiler.h"
 #include "Disassembler.h"
 #include "EventArgs.h"
@@ -22,6 +23,7 @@ public:
 	Memory& getMemory() { return m_memory; }
 	const Z80& getCPU() const { return m_cpu; }
 	Z80& getCPUMutable() { return m_cpu; }
+	Ula& ULA() { return m_ula;  }
 
 	void initialise();
 
@@ -29,12 +31,56 @@ public:
 	void powerOn() { m_power = true; }
 	void powerOff() { m_power = false; }
 
+	void triggerHorizontalRetraceInterrupt() {
+		if (ULA().NMI()) {
+			m_cpu.interruptNonMaskable();
+		}
+	}
+
+	void runScanLine() {
+
+		// Horizontal Scanline Timings
+		// Horizontal Display    128 cycles(32 characters, 256 pixels)
+		// Horizontal Blanking    64 cycles(left and right screen border)
+		// Horizontal Retrace     15 cycles
+		// Total Scanline Time   207 cycles
+		//
+		// Horizontal retrace rate and duration are fixed.The display procedure might increase
+		// or decrease the width of the display area(by respectively adjusting the blanking time)
+		// even though larger screens might exceed the visible dimensions of the attached TV set or monitor.
+
+		runToLimit(207);
+	}
+
+	void runToLimit(int limit) {
+		for (int cycles = 0; !finishedCycling(limit, cycles); ++cycles) {
+			step();
+		}
+	}
+
+	bool finishedCycling(int limit, int cycles) const {
+		auto exhausted = cycles > limit;
+		return exhausted || m_cpu.isHalted();
+	}
+
+	void step() {
+		m_cpu.step();
+		auto bit6 = m_cpu.REFRESH() & Processor::Mask6;
+		if (bit6 == 0) {
+			m_cpu.interruptMaskable();
+		}
+	}
+
 private:
 	const Configuration& m_configuration;
 	Memory m_memory;
 	InputOutput m_ports;
 	Z80 m_cpu;
+	Ula m_ula;
 	bool m_power;
+
+	bool m_fiftyHertzRefresh;
+	bool m_cassetteInput;
 
 	Profiler m_profiler;
 	Disassembler m_disassembler;
