@@ -32,13 +32,35 @@ public:
 	void powerOff() { m_power = false; }
 
 	void triggerHorizontalRetraceInterrupt() {
+		ULA().LINECNTR()++;
 		if (ULA().NMI()) {
 			m_cpu.interruptNonMaskable();
 		}
 	}
 
-	void runScanLine() {
+	static int getNumberOfScanLines50Hz() {
+		auto upperBlanking = 56;
+		auto displayArea = 192;
+		auto lowerBlanking = 56;
+		auto verticalRetrace = 6;
+		return upperBlanking + displayArea + lowerBlanking + verticalRetrace;
+	}
 
+	static int getNumberOfScanLines60Hz() {
+		auto upperBlanking = 32;
+		auto displayArea = 192;
+		auto lowerBlanking = 32;
+		auto verticalRetrace = 6;
+		return upperBlanking + displayArea + lowerBlanking + verticalRetrace;
+	}
+
+	int getNumberOfScanLines() const {
+		if (m_configuration.getCyclesPerFrame() == 60)
+			return getNumberOfScanLines60Hz();
+		return getNumberOfScanLines50Hz();
+	}
+
+	static int getCyclesPerScanLine() {
 		// Horizontal Scanline Timings
 		// Horizontal Display    128 cycles(32 characters, 256 pixels)
 		// Horizontal Blanking    64 cycles(left and right screen border)
@@ -49,7 +71,11 @@ public:
 		// or decrease the width of the display area(by respectively adjusting the blanking time)
 		// even though larger screens might exceed the visible dimensions of the attached TV set or monitor.
 
-		runToLimit(207);
+		return 207;
+	}
+
+	void runScanLine() {
+		runToLimit(getCyclesPerScanLine());
 	}
 
 	void runToLimit(int limit) {

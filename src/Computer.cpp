@@ -118,7 +118,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		//runRasterScan();
+		auto cyclesAvailable = m_configuration.getCyclesPerFrame();
 
 		if (m_configuration.isDrawGraphics())
 			drawFrame();
@@ -133,7 +133,8 @@ void Computer::runLoop() {
 			}
 		}
 
-		runVerticalBlank();
+		cyclesAvailable -= m_board.getCyclesPerScanLine() * m_board.getNumberOfScanLines();
+		m_board.runToLimit(cyclesAvailable);
 	}
 }
 
@@ -143,21 +144,6 @@ void Computer::handleKeyDown(SDL_Keycode key) {
 void Computer::handleKeyUp(SDL_Keycode key) {
 }
 
-
-void Computer::runRasterScan() {
-	runToLimit(m_configuration.getCyclesDuringRasterScan());
-}
-
-void Computer::runVerticalBlank() {
-	runToLimit(m_configuration.getCyclesDuringVerticalBlank());
-}
-
-void Computer::runToLimit(int limit) {
-	for (int cycles = 0; !finishedCycling(limit, cycles); ++cycles) {
-		m_board.getCPUMutable().step();
-	}
-}
-
 bool Computer::finishedCycling(int limit, int cycles) const {
 	auto exhausted = cycles > limit;
 	return exhausted || m_board.getCPU().isHalted();
@@ -165,20 +151,7 @@ bool Computer::finishedCycling(int limit, int cycles) const {
 
 void Computer::drawFrame() {
 	
-	// vertical timings
-
-	auto upperBlanking = 56;
-	auto displayArea = 192;
-	auto lowerBlanking = 56;
-	auto verticalRetrace = 6;
-	if (m_configuration.getCyclesPerFrame() == 60) {
-		upperBlanking = 32;
-		displayArea = 192;
-		lowerBlanking = 32;
-		verticalRetrace = 6;
-	}
-
-	auto totalScanLines = upperBlanking + displayArea + lowerBlanking + verticalRetrace;
+	auto totalScanLines = m_board.getNumberOfScanLines();
 
 	for (int scanLine = 0; scanLine < totalScanLines; ++scanLine) {
 		m_board.triggerHorizontalRetraceInterrupt();
