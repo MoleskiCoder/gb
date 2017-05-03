@@ -163,16 +163,16 @@ std::string Disassembler::alu(int which) {
 	throw std::logic_error("Unhandled alu operation");
 }
 
-std::string Disassembler::disassemble(const Z80& cpu) {
+std::string Disassembler::disassemble(Z80& cpu) {
 	m_prefixCB = m_prefixDD = m_prefixED = m_prefixFD = false;
 	std::ostringstream output;
 	disassemble(output, cpu, cpu.getProgramCounter());
 	return output.str();
 }
 
-void Disassembler::disassemble(std::ostringstream& output, const Z80& cpu, uint16_t pc) {
+void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc) {
 
-	const auto& memory = cpu.getMemory();
+	auto& memory = cpu.getMemory();
 	auto opcode = memory.get(pc);
 
 	// hex opcode
@@ -230,7 +230,7 @@ void Disassembler::disassemble(std::ostringstream& output, const Z80& cpu, uint1
 
 void Disassembler::disassembleCB(
 	std::ostringstream& output,
-	const Z80& cpu,
+	Z80& cpu,
 	uint16_t pc,
 	std::string& specification,
 	int& dumpCount,
@@ -240,7 +240,7 @@ void Disassembler::disassembleCB(
 
 void Disassembler::disassembleED(
 		std::ostringstream& output,
-		const Z80& cpu,
+		Z80& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,
@@ -347,7 +347,7 @@ void Disassembler::disassembleED(
 
 void Disassembler::disassembleOther(
 	std::ostringstream& output,
-	const Z80& cpu,
+	Z80& cpu,
 	uint16_t pc,
 	std::string& specification,
 	int& dumpCount,

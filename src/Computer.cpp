@@ -144,11 +144,6 @@ void Computer::handleKeyDown(SDL_Keycode key) {
 void Computer::handleKeyUp(SDL_Keycode key) {
 }
 
-bool Computer::finishedCycling(int limit, int cycles) const {
-	auto exhausted = cycles > limit;
-	return exhausted || m_board.getCPU().isHalted();
-}
-
 void Computer::drawFrame() {
 	
 	auto totalScanLines = m_board.getNumberOfScanLines();

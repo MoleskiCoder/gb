@@ -8,14 +8,12 @@
 Memory::Memory(int addressMask)
 : m_addressMask(addressMask) {}
 
-uint8_t Memory::get(int address) const {
-	return m_bus[address & m_addressMask];
+uint8_t Memory::get(int address) {
+	return reference(address);
 }
 
 void Memory::set(int address, uint8_t value) {
-	uint16_t effective = address & m_addressMask;
-	if (!m_locked[effective])
-		m_bus[effective] = value;
+	reference(address) = value;
 }
 
 uint8_t& Memory::reference(int address) {

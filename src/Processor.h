@@ -63,7 +63,7 @@ public:
 
 	Processor(Memory& memory, InputOutput& ports);
 
-	const Memory& getMemory() const { return m_memory; }
+	Memory& getMemory() { return m_memory; }
 
 	uint16_t getProgramCounter() const { return pc; }
 	void setProgramCounter(uint16_t value) { pc = value; }
@@ -80,13 +80,13 @@ public:
 
 	void reset();
 
-	uint16_t getWord(int address) const {
+	virtual uint16_t getWord(int address) const {
 		auto low = m_memory.get(address);
 		auto high = m_memory.get(address + 1);
 		return makeWord(low, high);
 	}
 
-	void setWord(int address, uint16_t value) {
+	virtual void setWord(int address, uint16_t value) {
 		m_memory.set(address, Memory::lowByte(value));
 		m_memory.set(address + 1, Memory::highByte(value));
 	}

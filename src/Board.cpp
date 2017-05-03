@@ -5,8 +5,8 @@
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
-  m_memory(0xffff),
-  m_cpu(Z80(m_memory, m_ports)),
+  m_bus(*this),
+  m_cpu(Z80(m_bus, m_ports)),
   m_power(false),
   m_fiftyHertzRefresh(false),
   m_cassetteInput(false) {
@@ -25,22 +25,22 @@ void Board::initialise() {
 
 	m_power = false;
 
-	m_memory.clear();
+	BUS().clear();
 	auto romDirectory = m_configuration.getRomDirectory();
 
 	switch (m_configuration.getMachineMode()) {
 	case Configuration::ZX81:
-		m_memory.loadRom(romDirectory + "/zx81_v2.rom", 0x00);
+		BUS().loadRom(romDirectory + "/zx81_v2.rom", 0x00);
 		m_ports.WritingPort.connect(std::bind(&Board::Board_PortWriting_ZX81, this, std::placeholders::_1));
 		m_ports.WrittenPort.connect(std::bind(&Board::Board_PortWritten_ZX81, this, std::placeholders::_1));
 		m_ports.ReadingPort.connect(std::bind(&Board::Board_PortReading_ZX81, this, std::placeholders::_1));
 		break;
 
 	case Configuration::CPM:
-		m_memory.loadRam(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
+		BUS().loadRam(romDirectory + "/prelim.com", 0x100);		// Cringle preliminary tests
 		//m_memory.loadRam(romDirectory + "/zexdoc.com", 0x100);		// Cringle preliminary tests
 
-		m_memory.set(5, 0xc9);	// ret
+		BUS().set(5, 0xc9);	// ret
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Cpm, this, std::placeholders::_1));
 		break;
 
@@ -84,8 +84,8 @@ void Board::bdos() {
 		break;
 	}
 	case 0x9:
-		for (uint16_t i = m_cpu.DE().word; m_memory.get(i) != '$'; ++i) {
-			std::cout << m_memory.get(i);
+		for (uint16_t i = m_cpu.DE().word; BUS().get(i) != '$'; ++i) {
+			std::cout << BUS().get(i);
 		}
 		break;
 	}
@@ -96,7 +96,7 @@ void Board::Cpu_ExecutingInstruction_Profile(const Z80& cpu) {
 	const auto pc = cpu.getProgramCounter();
 
 	m_profiler.addAddress(pc);
-	m_profiler.addInstruction(m_memory.get(pc));
+	m_profiler.addInstruction(BUS().get(pc));
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(Z80& cpu) {
@@ -108,6 +108,13 @@ void Board::Cpu_ExecutingInstruction_Debug(Z80& cpu) {
 		<< '\n';
 }
 
+void Board::triggerHorizontalRetraceInterrupt() {
+	BUS().incrementLineCounter();
+	if (BUS().NMI()) {
+		m_cpu.interruptNonMaskable();
+	}
+}
+
 void Board::Board_PortWriting_ZX81(const PortEventArgs& portEvent) {
 }
 
@@ -117,9 +124,9 @@ void Board::Board_PortWritten_ZX81(const PortEventArgs& portEvent) {
 	// Writing any data to any port terminates the Vertical Retrace
 	// period, and restarts the LINECNTR counter.The retrace signal
 	// is also output to the cassette(ie.the Cassette Output becomes High).
-	ULA().VERTICAL_RETRACE() = false;
-	ULA().LINECNTR() = 0;
-	ULA().CAS_OUT() = Ula::High;
+	BUS().VERTICAL_RETRACE() = false;
+	BUS().LINECNTR() = 0;
+	BUS().CAS_OUT() = Ula::High;
 
 	auto port = portEvent.getPort();
 	auto value = m_ports.readOutputPort(port);
@@ -128,7 +135,7 @@ void Board::Board_PortWritten_ZX81(const PortEventArgs& portEvent) {
 
 	// Writing any data to this port disables the NMI generator.
 	case 0xfd:
-		ULA().NMI() = false;
+		BUS().NMI() = false;
 		std::cout << "Disable NMI" << std::endl;
 		break;
 
@@ -137,7 +144,7 @@ void Board::Board_PortWritten_ZX81(const PortEventArgs& portEvent) {
 	// vertical blanking periods to count the number of drawn
 	// blank scanlines.
 	case 0xfe:
-		ULA().NMI() = true;
+		BUS().NMI() = true;
 		std::cout << "Enable NMI" << std::endl;
 		break;
 
@@ -185,10 +192,10 @@ void Board::Board_PortReading_ZX81(const PortEventArgs& portEvent) {
 	// 7FFEh	7 (A15)			SPC		.	 M    N    B
 	case 0xfe: {
 
-			if (ULA().NMI()) {
-				ULA().CAS_OUT() = Ula::Low;
-				ULA().LINECNTR() = 0;
-				ULA().VERTICAL_RETRACE() = true;
+			if (BUS().NMI()) {
+				BUS().CAS_OUT() = Ula::Low;
+				BUS().LINECNTR() = 0;
+				BUS().VERTICAL_RETRACE() = true;
 			}
 
 			// The upper address line is the old acculumulator value

@@ -10,7 +10,7 @@ public:
 	Disassembler();
 
 	static std::string state(Z80& cpu);
-	std::string disassemble(const Z80& cpu);
+	std::string disassemble(Z80& cpu);
 
 	static std::string flag(uint8_t value, int flag, const std::string& represents);
 	static std::string flags(uint8_t value);
@@ -27,11 +27,11 @@ private:
 	bool m_prefixED;
 	bool m_prefixFD;
 
-	void disassemble(std::ostringstream& output, const Z80& cpu, uint16_t pc);
+	void disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc);
 
 	void disassembleCB(
 		std::ostringstream& output,
-		const Z80& cpu,
+		Z80& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,
@@ -40,7 +40,7 @@ private:
 
 	void disassembleED(
 		std::ostringstream& output,
-		const Z80& cpu,
+		Z80& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,
@@ -49,7 +49,7 @@ private:
 
 	void disassembleOther(
 		std::ostringstream& output,
-		const Z80& cpu,
+		Z80& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,

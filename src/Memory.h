@@ -11,10 +11,10 @@ public:
 
 	Memory(int addressMask);
 
-	uint8_t get(int address) const;
-	void set(int address, uint8_t value);
+	virtual uint8_t get(int address);
+	virtual void set(int address, uint8_t value);
 
-	uint8_t& reference(int address);
+	virtual uint8_t& reference(int address);
 
 	void clear();
 	void loadRom(const std::string& path, uint16_t offset);

@@ -20,10 +20,9 @@ public:
 
 	Board(const Configuration& configuration);
 
-	Memory& getMemory() { return m_memory; }
+	Ula& BUS() { return m_bus; }
 	const Z80& getCPU() const { return m_cpu; }
 	Z80& getCPUMutable() { return m_cpu; }
-	Ula& ULA() { return m_ula;  }
 
 	void initialise();
 
@@ -31,12 +30,7 @@ public:
 	void powerOn() { m_power = true; }
 	void powerOff() { m_power = false; }
 
-	void triggerHorizontalRetraceInterrupt() {
-		ULA().LINECNTR()++;
-		if (ULA().NMI()) {
-			m_cpu.interruptNonMaskable();
-		}
-	}
+	void triggerHorizontalRetraceInterrupt();
 
 	static int getNumberOfScanLines50Hz() {
 		auto upperBlanking = 56;
@@ -97,12 +91,19 @@ public:
 		}
 	}
 
+	uint16_t getVideoMemoryAddress() const {
+		return m_cpu.getWord(DFILE);
+	}
+
 private:
+	enum {
+		DFILE = 0x400c
+	};
+
 	const Configuration& m_configuration;
-	Memory m_memory;
 	InputOutput m_ports;
 	Z80 m_cpu;
-	Ula m_ula;
+	Ula m_bus;
 	bool m_power;
 
 	bool m_fiftyHertzRefresh;
