@@ -14,8 +14,8 @@ Ula::Ula(Board& board)
 uint8_t Ula::get(int address) {
 	if ((Processor::Bit15 & address) && m_board.getCPU().getM1()) {
 
-		address &= ~(Processor::Bit15);
-		auto value = Memory::get(address);
+		ADDRESS() = address & ~(Processor::Bit15);
+		auto value = reference();
 
 		if (value & Processor::Bit6) {
 
@@ -35,8 +35,10 @@ uint8_t Ula::get(int address) {
 
 			return 0;
 		}
+	} else {
+		ADDRESS() = address;
 	}
-	return Memory::get(address);
+	return Memory::reference();
 }
 
 void Ula::incrementLineCounter() {

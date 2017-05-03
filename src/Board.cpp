@@ -198,8 +198,7 @@ void Board::Board_PortReading_ZX81(const PortEventArgs& portEvent) {
 				BUS().VERTICAL_RETRACE() = true;
 			}
 
-			// The upper address line is the old acculumulator value
-			auto upper = m_cpu.A();
+			auto upper = Memory::highByte(m_bus.ADDRESS());
 
 			// until I implement proper keyboard input..
 			auto keyboardColumnReleased = 0b11111;
@@ -214,8 +213,8 @@ void Board::Board_PortReading_ZX81(const PortEventArgs& portEvent) {
 				| keyboardColumnReleased;
 
 			m_ports.writeInputPort(port, value);
+			std::cout << "Reading port " << Disassembler::hex(upper) << "fe" << std::endl;
 		}
-		std::cout << "Reading port FE" << std::endl;
 		break;
 	}
 }
