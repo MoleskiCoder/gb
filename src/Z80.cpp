@@ -1152,22 +1152,26 @@ void Z80::executeED(int x, int y, int z, int p, int q) {
 		break;
 	case 1:
 		switch (z) {
-		case 0: { // Input from port with 16-bit address
-				if (y == 6) {	// IN (C)
-					uint8_t value;
-					readPort(value, C());
-				} else {		// IN r[y],(C)
-					readPort(R(y), C());
-				}
-				cycles += 12;
+		case 0: // Input from port with 16-bit address
+			m_memory.ADDRESS() = BC().word;
+			MEMPTR().word = m_memory.ADDRESS();
+			if (y == 6) {	// IN (C)
+				uint8_t value;
+				readPort(value, C());
+			} else {		// IN r[y],(C)
+				readPort(R(y), C());
 			}
+			MEMPTR().word++;
+			cycles += 12;
 			break;
 		case 1:	// Output to port with 16-bit address
+			m_memory.ADDRESS() = BC().word;
+			MEMPTR().word = m_memory.ADDRESS();
 			if (y == 6)	// OUT (C),0
 				m_ports.write(C(), 0);
 			else		// OUT (C),r[y]
 				m_ports.write(C(), R(y));
-			MEMPTR().word = BC().word + 1;
+			MEMPTR().word++;
 			cycles += 12;
 			break;
 		case 2:	// 16-bit add/subtract with carry
@@ -1605,18 +1609,21 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 				break;
 			case 2: { // OUT (n),A
 					auto port = fetchByteData();
-					m_ports.write(port, A());
-					MEMPTR().low = ++port;
+					MEMPTR().low = port;
 					MEMPTR().high = A();
+					m_memory.ADDRESS() = MEMPTR().word;
+					m_ports.write(port, A());
+					MEMPTR().low++;
 					cycles += 11;
 				}
 				break;
 			case 3: { // IN A,(n)
-					auto before = A();
 					auto port = fetchByteData();
+					MEMPTR().low = port;
+					MEMPTR().high = A();
+					m_memory.ADDRESS() = MEMPTR().word;
 					A() = m_ports.read(port);
-					MEMPTR().low = ++port;
-					MEMPTR().high = before;
+					MEMPTR().low++;
 					cycles += 11;
 				}
 				break;

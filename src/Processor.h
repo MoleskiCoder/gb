@@ -47,6 +47,10 @@ public:
 	static uint8_t promoteNibble(uint8_t value) { return value << 4; }
 	static uint8_t demoteNibble(uint8_t value) { return highNibble(value); }
 
+	static uint16_t makeWord(uint8_t low, uint8_t high) {
+		return (high << 8) | low;
+	}
+
 	typedef union {
 		struct {
 #ifdef HOST_LITTLE_ENDIAN
@@ -63,7 +67,7 @@ public:
 
 	Processor(Memory& memory, InputOutput& ports);
 
-	Memory& getMemory() { return m_memory; }
+	const Memory& getMemory() const { return m_memory; }
 
 	uint16_t getProgramCounter() const { return pc; }
 	void setProgramCounter(uint16_t value) { pc = value; }
@@ -81,14 +85,11 @@ public:
 	void reset();
 
 	virtual uint16_t getWord(int address) const {
-		auto low = m_memory.get(address);
-		auto high = m_memory.get(address + 1);
-		return makeWord(low, high);
+		return m_memory.getWord(address);
 	}
 
 	virtual void setWord(int address, uint16_t value) {
-		m_memory.set(address, Memory::lowByte(value));
-		m_memory.set(address + 1, Memory::highByte(value));
+		m_memory.setWord(address, value);
 	}
 
 protected:
@@ -101,10 +102,6 @@ protected:
 	uint16_t sp;
 
 	bool m_halted;
-
-	static uint16_t makeWord(uint8_t low, uint8_t high) {
-		return (high << 8) | low;
-	}
 
 	void pushWord(uint16_t value);
 	uint16_t popWord();

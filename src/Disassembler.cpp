@@ -173,7 +173,7 @@ std::string Disassembler::disassemble(Z80& cpu) {
 void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc) {
 
 	auto& memory = cpu.getMemory();
-	auto opcode = memory.get(pc);
+	auto opcode = memory.peek(pc);
 
 	// hex opcode
 	output << hex(opcode);
@@ -185,11 +185,11 @@ void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc
 	auto p = (y & 0b110) >> 1;
 	auto q = (y & 1);
 
-	auto immediate = memory.get(pc + 1);
+	auto immediate = memory.peek(pc + 1);
 	auto absolute = cpu.getWord(pc + 1);
 	auto displacement = (int8_t)immediate;
 	auto relative = pc + displacement + 2;
-	auto indexedImmediate = memory.get(pc + 1);
+	auto indexedImmediate = memory.peek(pc + 1);
 
 	auto dumpCount = 0;
 
@@ -212,7 +212,7 @@ void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc
 			x, y, z, p, q);
 
 	for (int i = 0; i < dumpCount; ++i)
-		output << hex(memory.get(pc + i + 1));
+		output << hex(memory.peek(pc + i + 1));
 
 	auto outputFormatSpecification = !m_prefixDD;
 	if (m_prefixDD) {
