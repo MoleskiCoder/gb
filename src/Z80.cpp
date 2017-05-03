@@ -13,6 +13,7 @@ Z80::Z80(Memory& memory, InputOutput& ports)
   m_interruptMode(0),
   m_iff1(false),
   m_iff2(false),
+  m1(false),
   m_prefixCB(false),
   m_prefixDD(false),
   m_prefixED(false),
@@ -77,6 +78,7 @@ void Z80::interrupt(bool maskable, uint8_t value) {
 			disableInterrupts();
 			switch (IM()) {
 			case 0:
+				M1() = true;
 				execute(value);
 				break;
 			case 1:
@@ -147,7 +149,7 @@ void Z80::restart(uint8_t address) {
 }
 
 void Z80::jrConditional(int conditional) {
-	auto offset = (int8_t)fetchByte();
+	auto offset = (int8_t)fetchByteData();
 	if (conditional) {
 		setPcViaMemptr(pc + offset);
 		cycles += 5;
@@ -950,12 +952,13 @@ void Z80::readPort(uint8_t& operand, uint8_t port) {
 void Z80::step() {
 	ExecutingInstruction.fire(*this);
 	m_prefixCB = m_prefixDD = m_prefixED = m_prefixFD = false;
-	execute(fetchByte());
+	fetchExecute();
 }
 
 void Z80::execute(uint8_t opcode) {
 
-	REFRESH()++;
+	if (!getM1())
+		throw std::logic_error("M1 cannot be high");
 
 	auto x = (opcode & 0b11000000) >> 6;
 	auto y = (opcode & 0b111000) >> 3;
@@ -965,6 +968,11 @@ void Z80::execute(uint8_t opcode) {
 	auto q = (y & 1);
 
 	auto oldCycles = cycles;
+
+	if (!(m_prefixCB && (m_prefixDD || m_prefixFD))) {
+		incrementRefresh();
+		M1() = false;
+	}
 
 	if (m_prefixCB)
 		executeCB(x, y, z, p, q);
@@ -1441,7 +1449,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 			break;
 		case 6: { // 8-bit load immediate
 			auto& r = R(y);		// LD r,n
-			r = fetchByte();
+			r = fetchByteData();
 			cycles += 7;
 			if (y == 6)
 				cycles += 3;
@@ -1591,14 +1599,12 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 				break;
 			case 1:	// CB prefix
 				m_prefixCB = true;
-				if (m_prefixDD || m_prefixFD) {
-					m_displacement = fetchByte();
-					REFRESH()--;
-				}
-				execute(fetchByte());
+				if (m_prefixDD || m_prefixFD)
+					m_displacement = fetchByteData();
+				fetchExecute();
 				break;
 			case 2: { // OUT (n),A
-					auto port = fetchByte();
+					auto port = fetchByteData();
 					m_ports.write(port, A());
 					MEMPTR().low = ++port;
 					MEMPTR().high = A();
@@ -1607,7 +1613,7 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 				break;
 			case 3: { // IN A,(n)
 					auto before = A();
-					auto port = fetchByte();
+					auto port = fetchByteData();
 					A() = m_ports.read(port);
 					MEMPTR().low = ++port;
 					MEMPTR().high = before;
@@ -1650,15 +1656,15 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 					break;
 				case 1:	// DD prefix
 					m_prefixDD = true;
-					execute(fetchByte());
+					fetchExecute();
 					break;
 				case 2:	// ED prefix
 					m_prefixED = true;
-					execute(fetchByte());
+					fetchExecute();
 					break;
 				case 3:	// FD prefix
 					m_prefixFD = true;
-					execute(fetchByte());
+					fetchExecute();
 					break;
 				}
 			}
@@ -1666,28 +1672,28 @@ void Z80::executeOther(int x, int y, int z, int p, int q) {
 		case 6:	// Operate on accumulator and immediate operand: alu[y] n
 			switch (y) {
 			case 0:	// ADD A,n
-				A() = add(fetchByte());
+				A() = add(fetchByteData());
 				break;
 			case 1:	// ADC A,n
-				A() = adc(fetchByte());
+				A() = adc(fetchByteData());
 				break;
 			case 2:	// SUB n
-				A() = sub(fetchByte());
+				A() = sub(fetchByteData());
 				break;
 			case 3:	// SBC A,n
-				A() = sbc(fetchByte());
+				A() = sbc(fetchByteData());
 				break;
 			case 4:	// AND n
-				anda(fetchByte());
+				anda(fetchByteData());
 				break;
 			case 5:	// XOR n
-				xora(fetchByte());
+				xora(fetchByteData());
 				break;
 			case 6:	// OR n
-				ora(fetchByte());
+				ora(fetchByteData());
 				break;
 			case 7:	// CP n
-				compare(fetchByte());
+				compare(fetchByteData());
 				break;
 			}
 			cycles += 7;

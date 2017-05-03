@@ -32,7 +32,21 @@ public:
 	void execute(uint8_t opcode);
 	void step();
 
+	bool getM1() const { return m1; }
+
+	virtual uint16_t getWord(int address) const {
+		if (getM1())
+			throw std::logic_error("M1 cannot be low");
+		return Processor::getWord(address);
+	}
+
 	// Mutable access to processor!!
+
+	virtual void setWord(int address, uint16_t value) {
+		if (getM1())
+			throw std::logic_error("M1 cannot be low");
+		Processor::setWord(address, value);
+	}
 
 	register16_t& AF() {
 		return m_accumulatorFlags[m_accumulatorFlagsSet];
@@ -73,6 +87,8 @@ public:
 
 	register16_t& MEMPTR() { return m_memptr; }
 
+	bool& M1() { return m1; }
+
 	void exx() {
 		m_registerSet ^= 1;
 	}
@@ -104,6 +120,8 @@ private:
 
 	register16_t m_memptr;
 
+	bool m1;
+
 	bool m_prefixCB;
 	bool m_prefixDD;
 	bool m_prefixED;
@@ -113,6 +131,28 @@ private:
 
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
+
+	void fetchExecute() {
+		M1() = true;
+		execute(fetchByteExecute());
+	}
+
+	uint8_t fetchByteExecute() {
+		if (!getM1())
+			throw std::logic_error("M1 cannot be high");
+		return fetchByte();
+	}
+
+	uint8_t fetchByteData() {
+		if (getM1())
+			throw std::logic_error("M1 cannot be low");
+		return fetchByte();
+	}
+
+	void incrementRefresh() {
+		auto incremented = ((REFRESH() & Mask7) + 1) & Mask7;
+		REFRESH() = (REFRESH() & Bit7) | incremented;
+	}
 
 	void clearFlag(int flag) { F() &= ~flag; }
 	void setFlag(int flag) { F() |= flag; }
@@ -162,7 +202,7 @@ private:
 		case 6:
 			if (followPrefix) {
 				if (m_prefixDD || m_prefixFD) {
-					m_displacement = fetchByte();
+					m_displacement = fetchByteData();
 					return DISPLACED();
 				}
 			}
