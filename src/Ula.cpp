@@ -17,9 +17,12 @@ uint8_t Ula::get(int address) {
 		ADDRESS() = address & ~(Processor::Bit15);
 		auto value = reference();
 
+		auto address = m_rasterY * BytesPerLine + m_rasterX++;
+
 		if (value & Processor::Bit6) {
 
 			// display white
+			m_pixels[address] = 0;
 
 		} else {
 
@@ -29,9 +32,8 @@ uint8_t Ula::get(int address) {
 			auto cpu = m_board.getCPUMutable();
 			auto definition = cpu.IV() * 0x100 + character * 8 + LINECNTR();
 
-			for (int i = 0; i < 8; ++i) {
-				auto bit = 1 << i;
-			}
+			auto line = m_board.BUS().get(definition);
+			m_pixels[address] = invert ? ~line : line;
 
 			return 0;
 		}
@@ -43,6 +45,7 @@ uint8_t Ula::get(int address) {
 
 void Ula::incrementLineCounter() {
 	LINECNTR() = ((LINECNTR() & Processor::Mask3) + 1) & Processor::Mask3;
+	restartRasterLine();
 }
 
 uint8_t& Ula::LINECNTR() {

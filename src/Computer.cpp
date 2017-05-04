@@ -86,11 +86,11 @@ void Computer::configureBackground() const {
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, DisplayWidth, DisplayHeight);
+	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Ula::RasterWidth, Ula::RasterHeight);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
-	m_pixels.resize(DisplayWidth * DisplayHeight);
+	m_pixels.resize(Ula::RasterWidth * Ula::RasterHeight);
 }
 
 void Computer::runLoop() {
@@ -153,7 +153,18 @@ void Computer::drawFrame() {
 		m_board.runScanLine();
 	}
 
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_pixels[0], DisplayWidth * sizeof(Uint32)), "Unable to update texture: ");
+	for (int y = 0; y < Ula::RasterHeight; ++y) {
+		for (int x = 0; x < Ula::BytesPerLine; ++x) {
+			auto byte = m_board.BUS().getPixelGroup(x, y);
+			for (int bit = 0; bit < Ula::BytesPerPixel; ++bit) {
+				auto pixel = byte & ~(1 << bit);
+				auto outputPixel = y * Ula::RasterWidth + x * Ula::BytesPerPixel + bit;
+				m_pixels[outputPixel] = m_colours.getColour(pixel ? ColourPalette::Black : ColourPalette::White);
+			}
+		}
+	}
+
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_pixels[0], Ula::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 

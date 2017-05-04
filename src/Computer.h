@@ -31,8 +31,6 @@ public:
 private:
 	enum {
 		DisplayScale = 2,
-		DisplayWidth = Board::RasterHeight,
-		DisplayHeight = Board::RasterWidth
 	};
 
 	const Configuration& m_configuration;
@@ -59,11 +57,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return DisplayWidth * DisplayScale;
+		return Ula::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return DisplayHeight * DisplayScale;
+		return Ula::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);

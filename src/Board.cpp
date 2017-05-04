@@ -127,6 +127,7 @@ void Board::Board_PortWritten_ZX81(const PortEventArgs& portEvent) {
 	BUS().VERTICAL_RETRACE() = false;
 	BUS().LINECNTR() = 0;
 	BUS().CAS_OUT() = Ula::High;
+	BUS().restartRasterScreen();
 
 	auto port = portEvent.getPort();
 	auto value = m_ports.readOutputPort(port);

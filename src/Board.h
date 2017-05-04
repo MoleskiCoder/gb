@@ -13,11 +13,6 @@
 
 class Board {
 public:
-	enum {
-		RasterWidth = 256,
-		RasterHeight = 192
-	};
-
 	Board(const Configuration& configuration);
 
 	Ula& BUS() { return m_bus; }
@@ -64,7 +59,6 @@ public:
 		// Horizontal retrace rate and duration are fixed.The display procedure might increase
 		// or decrease the width of the display area(by respectively adjusting the blanking time)
 		// even though larger screens might exceed the visible dimensions of the attached TV set or monitor.
-
 		return 207;
 	}
 
