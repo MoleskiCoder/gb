@@ -34,7 +34,7 @@ public:
 
 	bool getM1() const { return m1; }
 
-	virtual uint16_t getWord(int address) const {
+	virtual uint16_t getWord(uint16_t address) const {
 		if (getM1())
 			throw std::logic_error("M1 cannot be low");
 		return Processor::getWord(address);
@@ -42,7 +42,7 @@ public:
 
 	// Mutable access to processor!!
 
-	virtual void setWord(int address, uint16_t value) {
+	virtual void setWord(uint16_t address, uint16_t value) {
 		if (getM1())
 			throw std::logic_error("M1 cannot be low");
 		Processor::setWord(address, value);

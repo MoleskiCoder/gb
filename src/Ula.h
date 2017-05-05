@@ -20,7 +20,7 @@ public:
 
 	Ula(Board& board);
 
-	virtual uint8_t get(int address);
+	virtual uint8_t get(uint16_t address);
 
 	uint8_t& LINECNTR();
 	SignalState& CAS_OUT();
@@ -42,8 +42,12 @@ public:
 		m_rasterY = m_rasterX = 0;
 	}
 
+	static int getPixelByteOffset(int x, int y) {
+		return x + y * BytesPerLine;
+	}
+
 	uint8_t& getPixelGroup(int x, int y) {
-		return m_pixels[x + y * BytesPerLine];
+		return m_pixels[getPixelByteOffset(x, y)];
 	}
 
 private:

@@ -84,11 +84,11 @@ public:
 
 	void reset();
 
-	virtual uint16_t getWord(int address) const {
+	virtual uint16_t getWord(uint16_t address) const {
 		return m_memory.getWord(address);
 	}
 
-	virtual void setWord(int address, uint16_t value) {
+	virtual void setWord(uint16_t address, uint16_t value) {
 		m_memory.setWord(address, value);
 	}
 

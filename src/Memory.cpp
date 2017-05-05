@@ -6,38 +6,38 @@
 #include <fstream>
 #include <algorithm>
 
-Memory::Memory(int addressMask)
+Memory::Memory(uint16_t addressMask)
 : m_address(0),
   m_addressMask(addressMask),
   m_data(&(m_bus[m_address])) {}
 
-uint8_t Memory::peek(int address) const {
+uint8_t Memory::peek(uint16_t address) const {
 	return m_bus[address];
 }
 
-uint16_t Memory::peekWord(int address) const {
+uint16_t Memory::peekWord(uint16_t address) const {
 	auto low = peek(address);
 	auto high = peek(address + 1);
 	return Processor::makeWord(low, high);
 }
 
-uint8_t Memory::get(int address) {
+uint8_t Memory::get(uint16_t address) {
 	ADDRESS() = address;
 	return reference();
 }
 
-uint16_t Memory::getWord(int address) {
+uint16_t Memory::getWord(uint16_t address) {
 	auto low = get(address);
 	auto high = get(address + 1);
 	return Processor::makeWord(low, high);
 }
 
-void Memory::set(int address, uint8_t value) {
+void Memory::set(uint16_t address, uint8_t value) {
 	ADDRESS() = address;
 	reference() = value;
 }
 
-void Memory::setWord(int address, uint16_t value) {
+void Memory::setWord(uint16_t address, uint16_t value) {
 	set(address, lowByte(value));
 	set(address + 1, highByte(value));
 }
@@ -58,7 +58,7 @@ uint8_t& Memory::referenceDATA(uint8_t& value) {
 	return DATA();
 }
 
-uint8_t& Memory::reference(int address) {
+uint8_t& Memory::reference(uint16_t address) {
 	ADDRESS() = address;
 	return reference();
 }

@@ -11,18 +11,27 @@ Ula::Ula(Board& board)
   m_nmi(false) {
 }
 
-uint8_t Ula::get(int address) {
-	if ((Processor::Bit15 & address) && m_board.getCPU().getM1()) {
+uint8_t Ula::get(const uint16_t address) {
 
-		ADDRESS() = address & ~(Processor::Bit15);
-		auto value = reference();
+	ADDRESS() = address;
 
-		auto address = m_rasterY * BytesPerLine + m_rasterX++;
+	if ((Processor::Bit15 & m_address) && m_board.getCPU().getM1()) {
+
+		auto mirror = m_address & ~(Processor::Bit15);
+		auto value = m_board.BUS().peek(mirror);
+
+		// Halt?  (AKA newline)
+		if (value == 0x76) {
+			restartRasterLine();
+			return value;
+		}
+
+		auto outputByte = getPixelByteOffset(m_rasterX++, m_rasterY);
 
 		if (value & Processor::Bit6) {
 
 			// display white
-			m_pixels[address] = 0;
+			m_pixels[outputByte] = 0;
 
 		} else {
 
@@ -33,13 +42,12 @@ uint8_t Ula::get(int address) {
 			auto definition = cpu.IV() * 0x100 + character * 8 + LINECNTR();
 
 			auto line = m_board.BUS().get(definition);
-			m_pixels[address] = invert ? ~line : line;
+			m_pixels[outputByte] = invert ? ~line : line;
 
 			return 0;
 		}
-	} else {
-		ADDRESS() = address;
 	}
+
 	return Memory::reference();
 }
 
