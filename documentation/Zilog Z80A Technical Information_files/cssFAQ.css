@@ -1,0 +1,136 @@
+/* $Id: cssFAQ.css,v 1.4 2004/03/21 18:14:05 neuro Exp $ */
+
+h1 {
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	font-size: 2.0em;
+	font-weight: normal;
+	margin-top: 0em;
+	margin-bottom: 0em;
+	background-color : transparent;
+	color : #ffffff;
+}
+
+body {
+	font-size : 0.8em; 
+	color : #000000; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff; 
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-right: 0;
+	margin-left: 0;
+}
+
+.pageHeader {
+	background-color: #004e98;
+	color: #ffffff;
+	margin: 0em 0em;
+	padding: 1.5em 2.0em;
+}
+
+.itemExpired {
+	font-weight: bold;
+	color: #999999;
+	font-family: Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	background-color: #ffffff;
+}
+
+.itemPending {
+	font-weight : bold;
+	color : #6699ff; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff;
+}
+
+.itemRemoved {
+	font-weight : bold;
+	color : #ff0033; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff;
+}
+
+.itemUpdated {
+	font-weight : bold;
+	color : #009900; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff;
+}
+
+.itemWarning {
+	font-weight: bold;
+	color: #ff0033;
+	font-family: Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	background-color: #ffffff;
+}
+
+.pageNavigation {
+	color : #000000;
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	background-color : #ffffff;
+	text-align: center;
+	width: 100%;
+}
+
+.siteNavigation {
+	color : #000000;
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	background-color : #ffffff;
+	text-align: center;
+	width: 100%;
+}
+
+.sectionTitle {
+	font-size : 14pt; 
+	color : #006699; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff; 
+}
+
+.sectionSubtitle {
+	font-size : 14pt; 
+	color : #006699; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff; 
+}
+
+.bodyTable {
+	border-top: #006699 1px solid;
+	padding-bottom: 10px;
+	padding-top: 10px;
+	border-bottom: #006699 1px solid;
+}
+
+.pageFooter {
+	font-family: Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif;
+	color: #999999;
+	background-color: #ffffff;
+	width: 80%;
+	text-align: center;
+	padding-left: 10%;
+}
+
+.bodyText {
+	color : #000000; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff;
+	width: 95%;
+}
+
+a:link {
+	color : #003399; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff; 
+}
+
+a:visited {
+	color : #003399; 
+	font-family : Lucida Grande, Verdana, Helvetica, Arial, Sans, Sans-Serif; 
+	background-color : #ffffff; 
+}
+
+pre, tt {
+	font-size: 1em;
+	background-color: #ffffff;
+	color: #990099;
+	font-family: Lucida Console, Courier New, Courier, Monaco, Monospace;
+}
