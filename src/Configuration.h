@@ -6,7 +6,7 @@ class Configuration {
 public:
 	enum MachineMode {
 		Unknown,
-		ZX81,
+		GameBoy,
 		CPM
 	};
 

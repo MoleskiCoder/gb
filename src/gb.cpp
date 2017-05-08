@@ -8,8 +8,8 @@ int main(int, char*[])
 	Configuration configuration;
 
 #ifdef _DEBUG
-	//configuration.setDebugMode(true);
-	//configuration.setProfileMode(true);
+	configuration.setDebugMode(true);
+	configuration.setProfileMode(true);
 #endif
 	//configuration.setDebugMode(true);
 

@@ -9,5 +9,5 @@ Configuration::Configuration()
 	m_framesPerSecond(60),
 	m_cyclesPerSecond(3250000),
 	m_romDirectory("roms"),
-	m_machineMode(ZX81) {
+	m_machineMode(GameBoy) {
 }

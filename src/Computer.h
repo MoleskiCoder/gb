@@ -57,11 +57,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return Ula::RasterWidth * DisplayScale;
+		return Board::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return Ula::RasterHeight * DisplayScale;
+		return Board::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);
