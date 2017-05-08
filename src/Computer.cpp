@@ -153,16 +153,77 @@ void Computer::drawFrame() {
 		m_board.runScanLine();
 	}
 
-	for (int y = 0; y < Ula::RasterHeight; ++y) {
-		for (int x = 0; x < Ula::BytesPerLine; ++x) {
-			auto byte = m_board.BUS().getPixelGroup(x, y);
-			for (int bit = 0; bit < Ula::BytesPerPixel; ++bit) {
-				auto pixel = byte & ~(1 << bit);
-				auto outputPixel = y * Ula::RasterWidth + x * Ula::BytesPerPixel + bit;
-				m_pixels[outputPixel] = m_colours.getColour(pixel ? ColourPalette::Black : ColourPalette::White);
+	auto dfile = 0x400c;
+	auto display = m_board.BUS().peekWord(dfile);
+
+	auto outputY = 0;
+
+	auto rows = 0;
+	do {
+		auto outputX = 0;
+
+		for (int column = 0; column < 32; ++column) {
+
+			auto character = m_board.BUS().peek(display++);
+
+			if (character = 0x76) {
+				outputY += 8;
+				//std::cout << "Return" << std::endl;
+				break;
+			} else {
+
+				std::cout << "Character: " << Disassembler::hex(character) << std::endl;
+
+				auto definitionBase = 0x1e00 + character * 8;
+
+				for (auto charY = 0; charY < 8; ++charY) {
+					auto definitionByte = m_board.BUS().peek(definitionBase + charY);
+					for (auto bit = 0; bit < 8; ++bit) {
+						auto mask = 1 << bit;
+						auto pixel = definitionByte & mask;
+						auto outputPixel = (outputY + charY) * Ula::RasterWidth + outputX + 8 - bit;
+						m_pixels[outputPixel] = m_colours.getColour(pixel ? ColourPalette::Black : ColourPalette::White);
+					}
+				}
+
+				outputX += 8;
 			}
 		}
-	}
+
+	} while (++rows <= 24);
+
+	//for (int character = 0; character < 64; ++character) {
+
+	//	auto lowNibble = Processor::lowNibble(character);
+	//	auto highNibble = Processor::highNibble(character);
+
+	//	auto startX = lowNibble * 8;
+	//	auto startY = highNibble * 8;
+
+	//	auto definitionBase = 0x1e00 + character * 8;
+
+	//	for (auto charY = 0; charY < 8; ++charY) {
+	//		auto definitionByte = m_board.BUS().peek(definitionBase + charY);
+	//		for (auto bit = 0; bit < Ula::BitsPerPixel; ++bit) {
+	//			auto mask = 1 << bit;
+	//			auto pixel = definitionByte & mask;
+	//			auto outputPixel = (startY + charY) * Ula::RasterWidth + startX + Ula::BitsPerPixel - bit;
+	//			m_pixels[outputPixel] = m_colours.getColour(pixel ? ColourPalette::Black : ColourPalette::White);
+	//		}
+	//	}
+	//}
+
+
+	//for (int y = 0; y < Ula::RasterHeight; ++y) {
+	//	for (int x = 0; x < Ula::BytesPerLine; ++x) {
+	//		auto byte = m_board.BUS().getPixelGroup(x, y);
+	//		for (int bit = 0; bit < Ula::BitsPerPixel; ++bit) {
+	//			auto pixel = byte & ~(1 << bit);
+	//			auto outputPixel = y * Ula::RasterWidth + x + (Ula::BitsPerPixel - bit);
+	//			m_pixels[outputPixel] = m_colours.getColour(pixel ? ColourPalette::Black : ColourPalette::White);
+	//		}
+	//	}
+	//}
 
 	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_pixels[0], Ula::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 

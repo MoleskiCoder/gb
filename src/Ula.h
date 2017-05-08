@@ -8,10 +8,9 @@ class Board;
 class Ula : public Memory {
 public:
 	enum {
-		RasterWidth = 256,
-		RasterHeight = 192,
-		BytesPerPixel = 8,
-		BytesPerLine = RasterWidth / BytesPerPixel,
+		RasterWidth = 32 * 8,
+		RasterHeight = 25 * 8,
+		BytesPerLine = RasterWidth / 8,
 	};
 
 	enum SignalState {
