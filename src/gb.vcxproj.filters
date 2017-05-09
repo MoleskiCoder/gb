@@ -53,10 +53,10 @@
     <ClInclude Include="Computer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Z80.h">
+    <ClInclude Include="Processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Processor.h">
+    <ClInclude Include="LR35902.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -91,13 +91,13 @@
     <ClCompile Include="Computer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Z80.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Processor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="gb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LR35902.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -6,7 +6,7 @@
 #include <bitset>
 
 #include "Memory.h"
-#include "Z80.h"
+#include "LR35902.h"
 #include "StatusFlags.h"
 
 Disassembler::Disassembler() {

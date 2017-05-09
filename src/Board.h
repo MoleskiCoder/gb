@@ -5,7 +5,7 @@
 #include "Memory.h"
 #include "InputOutput.h"
 #include "Configuration.h"
-#include "Z80.h"
+#include "LR35902.h"
 #include "Profiler.h"
 #include "Disassembler.h"
 #include "EventArgs.h"

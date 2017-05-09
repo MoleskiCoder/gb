@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Z80.h"
+#include "LR35902.h"
 
 // based on http://www.z80.info/decoding.htm
 // Half carry flag help from https://github.com/oubiwann/z80

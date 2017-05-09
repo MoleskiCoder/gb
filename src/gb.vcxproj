@@ -152,7 +152,7 @@
     <ClInclude Include="Computer.h" />
     <ClInclude Include="InputOutput.h" />
     <ClInclude Include="Processor.h" />
-    <ClInclude Include="Z80.h" />
+    <ClInclude Include="LR35902.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="PortEventArgs.h" />
     <ClInclude Include="Profiler.h" />
@@ -169,7 +169,7 @@
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="InputOutput.cpp" />
     <ClCompile Include="Processor.cpp" />
-    <ClCompile Include="Z80.cpp" />
+    <ClCompile Include="LR35902.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="stdafx.cpp">
