@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Processor.h"
 
-class Z80 : public Processor {
+class LR35902 : public Processor {
 public:
 	enum StatusBits {
 		SF = Bit7,
@@ -16,9 +18,13 @@ public:
 		CF = Bit0,
 	};
 
-	Z80(Memory& memory, InputOutput& ports);
+	LR35902(Memory& memory, InputOutput& ports);
 
-	Signal<Z80> ExecutingInstruction;
+	Signal<LR35902> ExecutingInstruction;
+
+	void stop() { m_stopped = true; }
+	void start() { m_stopped = false; }
+	bool stopped() const { return m_stopped; }
 
 	void disableInterrupts();
 	void enableInterrupts();
@@ -49,35 +55,32 @@ public:
 	}
 
 	register16_t& AF() {
-		return m_accumulatorFlags[m_accumulatorFlagsSet];
+		return m_accumulatorFlag;
 	}
 
 	uint8_t& A() { return AF().high; }
 	uint8_t& F() { return AF().low; }
 
 	register16_t& BC() {
-		return m_registers[m_registerSet][BC_IDX];
+		return m_registers[BC_IDX];
 	}
 
 	uint8_t& B() { return BC().high; }
 	uint8_t& C() { return BC().low; }
 
 	register16_t& DE() {
-		return m_registers[m_registerSet][DE_IDX];
+		return m_registers[DE_IDX];
 	}
 
 	uint8_t& D() { return DE().high; }
 	uint8_t& E() { return DE().low; }
 
 	register16_t& HL() {
-		return m_registers[m_registerSet][HL_IDX];
+		return m_registers[HL_IDX];
 	}
 
 	uint8_t& H() { return HL().high; }
 	uint8_t& L() { return HL().low; }
-
-	register16_t& IX() { return m_ix; }
-	register16_t& IY() { return m_iy; }
 
 	uint8_t& REFRESH() { return m_refresh; }
 	uint8_t& IV() { return iv; }
@@ -89,28 +92,14 @@ public:
 
 	bool& M1() { return m1; }
 
-	void exx() {
-		m_registerSet ^= 1;
-	}
-
-	void exxAF() {
-		m_accumulatorFlagsSet = !m_accumulatorFlagsSet;
-	}
-
 	virtual void reset();
 	virtual void initialise();
 
 private:
 	enum { BC_IDX, DE_IDX, HL_IDX };
 
-	std::array<std::array<register16_t, 3>, 2> m_registers;
-	int m_registerSet;
-
-	std::array<register16_t, 2> m_accumulatorFlags;
-	int m_accumulatorFlagsSet;
-
-	register16_t m_ix;
-	register16_t m_iy;
+	std::array<register16_t, 3> m_registers;
+	register16_t m_accumulatorFlag;
 
 	uint8_t m_refresh;
 	uint8_t iv;
@@ -123,11 +112,10 @@ private:
 	bool m1;
 
 	bool m_prefixCB;
-	bool m_prefixDD;
-	bool m_prefixED;
-	bool m_prefixFD;
 
 	int8_t m_displacement;
+
+	bool m_stopped;
 
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
@@ -165,14 +153,6 @@ private:
 	void clearFlag(int flag, uint32_t condition) { clearFlag(flag, condition != 0); }
 	void clearFlag(int flag, bool condition) { condition ? clearFlag(flag) : setFlag(flag); }
 
-	uint8_t& DISPLACED() {
-		if (!(m_prefixDD || m_prefixFD))
-			throw std::logic_error("Unprefixed indexed displacement requested");
-		uint16_t address = (m_prefixDD ? m_ix.word : m_iy.word) + m_displacement;
-		MEMPTR().word = address;
-		return m_memory.reference(address);
-	}
-
 	uint8_t& R(int r, bool followPrefix = true) {
 		switch (r) {
 		case 0:
@@ -184,28 +164,10 @@ private:
 		case 3:
 			return E();
 		case 4:
-			if (followPrefix) {
-				if (m_prefixDD)
-					return m_ix.high;
-				if (m_prefixFD)
-					return m_iy.high;
-			}
 			return H();
 		case 5:
-			if (followPrefix) {
-				if (m_prefixDD)
-					return m_ix.low;
-				if (m_prefixFD)
-					return m_iy.low;
-			}
 			return L();
 		case 6:
-			if (followPrefix) {
-				if (m_prefixDD || m_prefixFD) {
-					m_displacement = fetchByteData();
-					return DISPLACED();
-				}
-			}
 			return m_memory.reference(HL().word);
 		case 7:
 			return A();
@@ -217,35 +179,17 @@ private:
 		switch (rp) {
 		case 3:
 			return sp;
-		case HL_IDX:
-			if (m_prefixDD)
-				return m_ix.word;
-			if (m_prefixFD)
-				return m_iy.word;
 		default:
-			return m_registers[m_registerSet][rp].word;
+			return m_registers[rp].word;
 		}
-	}
-
-	uint16_t& ALT_HL() {
-		if (m_prefixDD)
-			return IX().word;
-		else if (m_prefixFD)
-			return IY().word;
-		return HL().word;
 	}
 
 	uint16_t& RP2(int rp) {
 		switch (rp) {
 		case 3:
 			return AF().word;
-		case HL_IDX:
-			if (m_prefixDD)
-				return m_ix.word;
-			if (m_prefixFD)
-				return m_iy.word;
 		default:
-			return m_registers[m_registerSet][rp].word;
+			return m_registers[rp].word;
 		}
 	}
 
@@ -304,7 +248,6 @@ private:
 	}
 
 	void executeCB(int x, int y, int z, int p, int q);
-	void executeED(int x, int y, int z, int p, int q);
 	void executeOther(int x, int y, int z, int p, int q);
 
 	void adjustSign(uint8_t value);
@@ -378,8 +321,7 @@ private:
 	void ccf();
 	void cpl();
 
-	void xhtl(register16_t& operand);
-	void xhtl();
+	void swap(uint8_t& operand);
 
 	void cp(uint16_t source);
 

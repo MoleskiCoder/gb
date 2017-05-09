@@ -6,7 +6,7 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_bus(0xffff),
-  m_cpu(Z80(m_bus, m_ports)),
+  m_cpu(LR35902(m_bus, m_ports)),
   m_power(false) {
 }
 
@@ -46,7 +46,7 @@ void Board::initialise() {
 	m_cpu.setProgramCounter(m_configuration.getStartAddress());
 }
 
-void Board::Cpu_ExecutingInstruction_Cpm(const Z80&) {
+void Board::Cpu_ExecutingInstruction_Cpm(const LR35902&) {
 	auto pc = m_cpu.getProgramCounter();
 	switch (pc) {
 	case 0x0:	// CP/M warm start
@@ -77,7 +77,7 @@ void Board::bdos() {
 	}
 }
 
-void Board::Cpu_ExecutingInstruction_Profile(const Z80& cpu) {
+void Board::Cpu_ExecutingInstruction_Profile(const LR35902& cpu) {
 
 	const auto pc = cpu.getProgramCounter();
 
@@ -85,7 +85,7 @@ void Board::Cpu_ExecutingInstruction_Profile(const Z80& cpu) {
 	m_profiler.addInstruction(BUS().get(pc));
 }
 
-void Board::Cpu_ExecutingInstruction_Debug(Z80& cpu) {
+void Board::Cpu_ExecutingInstruction_Debug(LR35902& cpu) {
 
 	std::cerr
 		<< Disassembler::state(cpu)

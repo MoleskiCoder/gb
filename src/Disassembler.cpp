@@ -14,7 +14,7 @@ Disassembler::Disassembler() {
 	m_formatter.exceptions(boost::io::all_error_bits ^ boost::io::too_many_args_bit);
 }
 
-std::string Disassembler::state(Z80& cpu) {
+std::string Disassembler::state(LR35902& cpu) {
 
 	auto pc = cpu.getProgramCounter();
 	auto sp = cpu.getStackPointer();
@@ -52,10 +52,6 @@ std::string Disassembler::RP(int rp) const {
 	case 1:
 		return "DE";
 	case 2:
-		if (m_prefixDD)
-			return "IX";
-		if (m_prefixFD)
-			return "IY";
 		return "HL";
 	case 3:
 		return "SP";
@@ -70,10 +66,6 @@ std::string Disassembler::RP2(int rp) const {
 	case 1:
 		return "DE";
 	case 2:
-		if (m_prefixDD)
-			return "IX";
-		if (m_prefixFD)
-			return "IY";
 		return "HL";
 	case 3:
 		return "AF";
@@ -92,27 +84,11 @@ std::string Disassembler::R(int r) const {
 	case 3:
 		return "E";
 	case 4:
-		if (m_prefixDD)
-			return "IXH";
-		if (m_prefixFD)
-			return "IYH";
 		return "H";
 	case 5:
-		if (m_prefixDD)
-			return "IXL";
-		if (m_prefixFD)
-			return "IYL";
 		return "L";
 	case 6:
-		if (m_prefixDD || m_prefixFD) {
-			if (m_prefixDD)
-				return "IX+%4%";
-			if (m_prefixFD)
-				return "IY+%4%";
-		}
-		else {
-			return "(HL)";
-		}
+		return "(HL)";
 	case 7:
 		return "A";
 	}
@@ -163,14 +139,14 @@ std::string Disassembler::alu(int which) {
 	throw std::logic_error("Unhandled alu operation");
 }
 
-std::string Disassembler::disassemble(Z80& cpu) {
-	m_prefixCB = m_prefixDD = m_prefixED = m_prefixFD = false;
+std::string Disassembler::disassemble(LR35902& cpu) {
+	m_prefixCB = false;
 	std::ostringstream output;
 	disassemble(output, cpu, cpu.getProgramCounter());
 	return output.str();
 }
 
-void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc) {
+void Disassembler::disassemble(std::ostringstream& output, LR35902& cpu, uint16_t pc) {
 
 	auto& memory = cpu.getMemory();
 	auto opcode = memory.peek(pc);
@@ -200,11 +176,6 @@ void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc
 			output, cpu, pc,
 			specification, dumpCount,
 			x, y, z, p, q);
-	else if (m_prefixED)
-		disassembleED(
-			output, cpu, pc,
-			specification, dumpCount,
-			x, y, z, p, q);
 	else
 		disassembleOther(
 			output, cpu, pc,
@@ -214,23 +185,14 @@ void Disassembler::disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc
 	for (int i = 0; i < dumpCount; ++i)
 		output << hex(memory.peek(pc + i + 1));
 
-	auto outputFormatSpecification = !m_prefixDD;
-	if (m_prefixDD) {
-		if (opcode != 0xdd) {
-			outputFormatSpecification = true;
-		}
-	}
-
-	if (outputFormatSpecification) {
-		output << '\t';
-		m_formatter.parse(specification);
-		output << m_formatter % (int)immediate % (int)absolute % relative % (int)displacement % indexedImmediate;
-	}
+	output << '\t';
+	m_formatter.parse(specification);
+	output << m_formatter % (int)immediate % (int)absolute % relative % (int)displacement % indexedImmediate;
 }
 
 void Disassembler::disassembleCB(
 	std::ostringstream& output,
-	Z80& cpu,
+	LR35902& cpu,
 	uint16_t pc,
 	std::string& specification,
 	int& dumpCount,
@@ -238,116 +200,9 @@ void Disassembler::disassembleCB(
 	int p, int q) {
 }
 
-void Disassembler::disassembleED(
-		std::ostringstream& output,
-		Z80& cpu,
-		uint16_t pc,
-		std::string& specification,
-		int& dumpCount,
-		int x, int y, int z,
-		int p, int q) {
-	switch (x) {
-	case 0:
-	case 3:
-		specification = "NONI NOP";
-		break;
-	case 1:
-		switch (z) {
-		case 2:
-			switch (q) {
-			case 0:
-				specification = "SBC HL," + RP(p);
-				break;
-			case 1:
-				specification = "ADC HL," + RP(p);
-				break;
-			}
-		case 3:
-			switch (q) {
-			case 0:
-				specification = "LD (%2$04XH)," + RP(p);
-				break;
-			case 1:
-				specification = "LD " + RP(p) + ",(%2$04XH)";
-				break;
-			}
-			dumpCount += 2;
-		}
-		break;
-	case 2:
-		switch (z) {
-		case 0:	// LD
-			switch (y) {
-			case 4:	// LDI
-				specification = "LDI";
-				break;
-			case 5:	// LDD
-				specification = "LDD";
-				break;
-			case 6:	// LDIR
-				specification = "LDIR";
-				break;
-			case 7:	// LDDR
-				specification = "LDDR";
-				break;
-			}
-			break;
-		case 1:	// CP
-			switch (y) {
-			case 4:	// CPI
-				specification = "CPI";
-				break;
-			case 5:	// CPD
-				specification = "CPD";
-				break;
-			case 6:	// CPIR
-				specification = "CPIR";
-				break;
-			case 7:	// CPDR
-				specification = "CPDR";
-				break;
-			}
-			break;
-		case 2:	// IN
-			switch (y) {
-			case 4:	// INI
-				specification = "INI";
-				break;
-			case 5:	// IND
-				specification = "IND";
-				break;
-			case 6:	// INIR
-				specification = "INIR";
-				break;
-			case 7:	// INDR
-				specification = "INDR";
-				break;
-			}
-			break;
-		case 3:	// OUT
-			switch (y) {
-			case 4:	// OUTI
-				specification = "OUTI";
-				break;
-			case 5:	// OUTD
-				specification = "OUTD";
-				break;
-			case 6:	// OTIR
-				specification = "OTIR";
-				break;
-			case 7:	// OTDR
-				specification = "OTDR";
-				break;
-			}
-			break;
-		}
-		break;
-	}
-}
-
 void Disassembler::disassembleOther(
 	std::ostringstream& output,
-	Z80& cpu,
+	LR35902& cpu,
 	uint16_t pc,
 	std::string& specification,
 	int& dumpCount,
@@ -362,12 +217,12 @@ void Disassembler::disassembleOther(
 			case 0:	// NOP
 				specification = "NOP";
 				break;
-			case 1:	// EX AF AF'
-				specification = "EX AF AF'";
-				break;
-			case 2:	// DJNZ d
-				specification = "DJNZ %3$04XH";
+			case 1:	// GB: LD (nn),SP
+				specification = "LD (%2$04XH),SP";
 				dumpCount += 2;
+				break;
+			case 2:	// GB: STOP
+				specification = "STOP";
 				break;
 			case 3:	// JR d
 				specification = "JR %3$04XH";
@@ -400,13 +255,11 @@ void Disassembler::disassembleOther(
 				case 1:	// LD (DE),A
 					specification = "LD (DE),A";
 					break;
-				case 2:	// LD (nn),HL
-					specification = "LD (%2$04XH),HL";
-					dumpCount += 2;
+				case 2:	// GB: LDI (HL),A
+					specification = "LDI (HL),A";
 					break;
-				case 3:	// LD (nn),A
-					specification = "LD (%2$04XH),A";
-					dumpCount += 2;
+				case 3:	// GB: LDD (HL),A
+					specification = "LDD (HL),A";
 					break;
 				}
 				break;
@@ -418,13 +271,11 @@ void Disassembler::disassembleOther(
 				case 1:	// LD A,(DE)
 					specification = "LD A,(DE)";
 					break;
-				case 2:	// LD HL,(nn)
-					specification = "LD HL,(%2$04XH)";
-					dumpCount += 2;
+				case 2:	// GB: LDI A,(HL)
+					specification = "LDI A,(HL)";
 					break;
-				case 3:	// LD A,(nn)
-					specification = "LD A,(%2$04XH)";
-					dumpCount += 2;
+				case 3:	// GB: LDD A,(HL)
+					specification = "LDD A,(HL)";
 					break;
 				}
 				break;
@@ -447,13 +298,7 @@ void Disassembler::disassembleOther(
 			specification = "DEC " + R(y);
 			break;
 		case 6:	// 8-bit load immediate
-			specification = "LD " + R(y);
-			if (y == 6 && (m_prefixDD || m_prefixFD)) {
-				specification += ",%5$02XH";
-				dumpCount++;
-			} else {
-				specification += ",%1$02XH";
-			}
+			specification = "LD " + R(y) + ",%1$02XH";
 			dumpCount++;
 			break;
 		case 7:	// Assorted operations on accumulator/flags
@@ -499,7 +344,30 @@ void Disassembler::disassembleOther(
 	case 3:
 		switch (z) {
 		case 0:	// Conditional return
-			specification = "RET " + cc(y);
+			switch (y) {
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				specification = "RET " + cc(y);
+				break;
+			case 4:
+				specification = "LD (FF00H+%1$02XH),A";
+				dumpCount++;
+				break;
+			case 5:
+				specification = "ADD SP,%3$04XH";
+				dumpCount++;
+				break;
+			case 6:
+				specification = "LD A,(FF00H+%1$02XH)";
+				dumpCount++;
+				break;
+			case 7:
+				specification = "LD HL,SP+%3$04XH";
+				dumpCount++;
+				break;
+			}
 			break;
 		case 1:	// POP & various ops
 			switch (q) {
@@ -511,8 +379,8 @@ void Disassembler::disassembleOther(
 				case 0:	// RET
 					specification = "RET";
 					break;
-				case 1:	// EXX
-					specification = "EXX";
+				case 1:	// GB: RETI
+					specification = "RETI";
 					break;
 				case 2:	// JP (HL)
 					specification = "JP (HL)";
@@ -524,8 +392,29 @@ void Disassembler::disassembleOther(
 			}
 			break;
 		case 2:	// Conditional jump
-			specification = "JP " + cc(y) + ",%2$04XH";
-			dumpCount += 2;
+			switch (y) {
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				specification = "JP " + cc(y) + ",%2$04XH";
+				dumpCount += 2;
+				break;
+			case 4:
+				specification = "LD (FF00H+C),A";
+				break;
+			case 5:
+				specification = "LD (%2$04XH),A";
+				dumpCount += 2;
+				break;
+			case 6:
+				specification = "LD A,(FF00H+C)";
+				break;
+			case 7:
+				specification = "LD A,(%2$04XH)";
+				dumpCount += 2;
+				break;
+			}
 			break;
 		case 3:	// Assorted operations
 			switch (y) {
@@ -572,18 +461,6 @@ void Disassembler::disassembleOther(
 					specification = "CALL %2$04XH";
 					dumpCount += 2;
 					break;
-				case 1:	// DD prefix
-					m_prefixDD = true;
-					disassemble(output, cpu, pc + 1);
-					break;
-				case 2:	// ED prefix
-					m_prefixED = true;
-					disassemble(output, cpu, pc + 1);
-					break;
-				case 3:	// FD prefix
-					m_prefixFD = true;
-					disassemble(output, cpu, pc + 1);
-					break;
 				}
 			}
 			break;
@@ -607,14 +484,14 @@ std::string Disassembler::flag(uint8_t value, int flag, const std::string& repre
 std::string Disassembler::flags(uint8_t value) {
 	std::ostringstream output;
 	output
-		<< flag(value, Z80::SF, "S")
-		<< flag(value, Z80::ZF, "Z")
-		<< flag(value, Z80::YF, "Y")
-		<< flag(value, Z80::HC, "H")
-		<< flag(value, Z80::XF, "X")
-		<< flag(value, Z80::PF, "P")
-		<< flag(value, Z80::NF, "N")
-		<< flag(value, Z80::CF, "C");
+		<< flag(value, LR35902::SF, "S")
+		<< flag(value, LR35902::ZF, "Z")
+		<< flag(value, LR35902::YF, "Y")
+		<< flag(value, LR35902::HC, "H")
+		<< flag(value, LR35902::XF, "X")
+		<< flag(value, LR35902::PF, "P")
+		<< flag(value, LR35902::NF, "N")
+		<< flag(value, LR35902::CF, "C");
 	return output.str();
 }
 

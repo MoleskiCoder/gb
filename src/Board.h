@@ -22,8 +22,8 @@ public:
 	Board(const Configuration& configuration);
 
 	Memory& BUS() { return m_bus; }
-	const Z80& getCPU() const { return m_cpu; }
-	Z80& getCPUMutable() { return m_cpu; }
+	const LR35902& getCPU() const { return m_cpu; }
+	LR35902& getCPUMutable() { return m_cpu; }
 
 	void initialise();
 
@@ -49,17 +49,17 @@ public:
 private:
 	const Configuration& m_configuration;
 	InputOutput m_ports;
-	Z80 m_cpu;
+	LR35902 m_cpu;
 	Memory m_bus;
 	bool m_power;
 
 	Profiler m_profiler;
 	Disassembler m_disassembler;
 
-	void Cpu_ExecutingInstruction_Cpm(const Z80& cpu);
+	void Cpu_ExecutingInstruction_Cpm(const LR35902& cpu);
 
-	void Cpu_ExecutingInstruction_Debug(Z80& cpu);
-	void Cpu_ExecutingInstruction_Profile(const Z80& cpu);
+	void Cpu_ExecutingInstruction_Debug(LR35902& cpu);
+	void Cpu_ExecutingInstruction_Profile(const LR35902& cpu);
 
 	void bdos();
 };

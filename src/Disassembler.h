@@ -3,14 +3,14 @@
 #include <string>
 #include <boost/format.hpp>
 
-class Z80;
+class LR35902;
 
 class Disassembler {
 public:
 	Disassembler();
 
-	static std::string state(Z80& cpu);
-	std::string disassemble(Z80& cpu);
+	static std::string state(LR35902& cpu);
+	std::string disassemble(LR35902& cpu);
 
 	static std::string flag(uint8_t value, int flag, const std::string& represents);
 	static std::string flags(uint8_t value);
@@ -23,24 +23,12 @@ public:
 private:
 	mutable boost::format m_formatter;
 	bool m_prefixCB;
-	bool m_prefixDD;
-	bool m_prefixED;
-	bool m_prefixFD;
 
-	void disassemble(std::ostringstream& output, Z80& cpu, uint16_t pc);
+	void disassemble(std::ostringstream& output, LR35902& cpu, uint16_t pc);
 
 	void disassembleCB(
 		std::ostringstream& output,
-		Z80& cpu,
-		uint16_t pc,
-		std::string& specification,
-		int& dumpCount,
-		int x, int y, int z,
-		int p, int q);
-
-	void disassembleED(
-		std::ostringstream& output,
-		Z80& cpu,
+		LR35902& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,
@@ -49,7 +37,7 @@ private:
 
 	void disassembleOther(
 		std::ostringstream& output,
-		Z80& cpu,
+		LR35902& cpu,
 		uint16_t pc,
 		std::string& specification,
 		int& dumpCount,

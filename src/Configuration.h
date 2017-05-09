@@ -77,7 +77,7 @@ public:
 	}
 
 	uint16_t getStartAddress() const {
-		return getMachineMode() == CPM ? 0x100 : 0;
+		return getMachineMode() == CPM ? 0x100 : 0x100;
 	}
 
 private:
