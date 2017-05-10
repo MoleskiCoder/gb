@@ -5,7 +5,6 @@
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
-  m_bus(0xffff),
   m_cpu(LR35902(m_bus, m_ports)),
   m_power(false) {
 }

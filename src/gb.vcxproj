@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
+    <ClInclude Include="Bus.h" />
     <ClInclude Include="ColourPalette.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Disassembler.h" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
+    <ClCompile Include="Bus.cpp" />
     <ClCompile Include="ColourPalette.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Disassembler.cpp" />

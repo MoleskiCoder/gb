@@ -7,10 +7,7 @@
 LR35902::LR35902(Memory& memory, InputOutput& ports)
 : Processor(memory, ports),
   m_refresh(0xff),
-  iv(0xff),
-  m_interruptMode(0),
-  m_iff1(false),
-  m_iff2(false),
+  m_ime(false),
   m1(false),
   m_prefixCB(false) {
 	m_memptr.word = 0;
@@ -18,14 +15,12 @@ LR35902::LR35902(Memory& memory, InputOutput& ports)
 
 void LR35902::reset() {
 	Processor::reset();
-	IFF1() = IFF2() = false;
+	di();
 }
 
 void LR35902::initialise() {
 
 	Processor::initialise();
-
-	IM() = 0;
 
 	AF().word = 0xffff;
 	BC().word = 0xffff;
@@ -33,45 +28,24 @@ void LR35902::initialise() {
 	HL().word = 0xffff;
 
 	REFRESH() = 0xff;
-	IV() = 0xff;
 	MEMPTR().word = 0;
 
 	m_prefixCB = false;
 }
 
-void LR35902::disableInterrupts() {
-	IFF1() = IFF2() = false;
+void LR35902::di() {
+	IME() = false;
 }
 
-void LR35902::enableInterrupts() {
-	IFF1() = IFF2() = true;
+void LR35902::ei() {
+	IME() = true;
 }
 
-void LR35902::interrupt(bool maskable, uint8_t value) {
-	if (!maskable || (maskable && IFF1())) {
-		if (maskable) {
-			disableInterrupts();
-			switch (IM()) {
-			case 0:
-				M1() = true;
-				execute(value);
-				break;
-			case 1:
-				restart(7 << 3);
-				cycles += 13;
-				break;
-			case 2:
-				pushWord(pc);
-				pc = makeWord(value, IV());
-				cycles += 19;
-				break;
-			}
-		} else {
-			IFF1() = 0;
-			restart(0x66);
-			cycles += 13;
-		}
-	}
+int LR35902::interrupt(uint8_t value) {
+	di();
+	M1() = false;
+	restart(value);
+	return 32;
 }
 
 void LR35902::adjustZero(uint8_t value) {
@@ -171,13 +145,9 @@ void LR35902::ret() {
 	setPcViaMemptr(popWord());
 }
 
-void LR35902::retn() {
-	ret();
-	IFF1() = IFF2();
-}
-
 void LR35902::reti() {
-	retn();
+	ret();
+	ei();
 }
 
 void LR35902::returnConditional(int condition) {
@@ -601,13 +571,13 @@ void LR35902::readPort(uint8_t& operand, uint8_t port) {
 	MEMPTR().word = bc + 1;
 }
 
-void LR35902::step() {
+int LR35902::step() {
 	ExecutingInstruction.fire(*this);
 	m_prefixCB = false;
-	fetchExecute();
+	return fetchExecute();
 }
 
-void LR35902::execute(uint8_t opcode) {
+int LR35902::execute(uint8_t opcode) {
 
 	if (!getM1())
 		throw std::logic_error("M1 cannot be high");
@@ -619,7 +589,7 @@ void LR35902::execute(uint8_t opcode) {
 	auto p = (y & 0b110) >> 1;
 	auto q = (y & 1);
 
-	auto oldCycles = cycles;
+	cycles = 0;
 
 	incrementRefresh();
 	M1() = false;
@@ -629,9 +599,10 @@ void LR35902::execute(uint8_t opcode) {
 	else
 		executeOther(x, y, z, p, q);
 
-	auto newCycles = cycles;
-	if (newCycles == oldCycles)
+	if (cycles == 0)
 		throw std::logic_error("Unhandled opcode");
+
+	return cycles;
 }
 
 void LR35902::executeCB(int x, int y, int z, int p, int q) {
@@ -922,11 +893,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				fetchExecute();
 				break;
 			case 6:	// DI
-				disableInterrupts();
+				di();
 				cycles += 4;
 				break;
 			case 7:	// EI
-				enableInterrupts();
+				ei();
 				cycles += 4;
 				break;
 			}

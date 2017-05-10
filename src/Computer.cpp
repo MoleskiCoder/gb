@@ -102,6 +102,8 @@ void Computer::runLoop() {
 
 	m_board.powerOn();
 
+	auto cycles = 0;
+
 	while (m_board.powered()) {
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {
@@ -118,7 +120,9 @@ void Computer::runLoop() {
 			}
 		}
 
-		auto cyclesAvailable = m_configuration.getCyclesPerFrame();
+		cycles += m_configuration.getCyclesPerFrame();
+
+		cycles -= m_board.runRasterLines();
 
 		if (m_configuration.isDrawGraphics())
 			drawFrame();
@@ -133,7 +137,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		m_board.runToLimit(cyclesAvailable);
+		cycles -= m_board.runVerticalBlankLines();
 	}
 }
 

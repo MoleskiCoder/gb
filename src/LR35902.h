@@ -21,17 +21,15 @@ public:
 	void start() { m_stopped = false; }
 	bool stopped() const { return m_stopped; }
 
-	void disableInterrupts();
-	void enableInterrupts();
+	bool& IME() { return m_ime; }
 
-	void interruptMaskable(uint8_t value) { interrupt(true, value); }
-	void interruptMaskable() { interruptMaskable(0); }
-	void interruptNonMaskable() { interrupt(false, 0); }
+	void di();
+	void ei();
 
-	void interrupt(bool maskable, uint8_t value);
+	int interrupt(uint8_t value);
 
-	void execute(uint8_t opcode);
-	void step();
+	int execute(uint8_t opcode);
+	int step();
 
 	bool getM1() const { return m1; }
 
@@ -78,10 +76,6 @@ public:
 	uint8_t& L() { return HL().low; }
 
 	uint8_t& REFRESH() { return m_refresh; }
-	uint8_t& IV() { return iv; }
-	int& IM() { return m_interruptMode; }
-	bool& IFF1() { return m_iff1; }
-	bool& IFF2() { return m_iff2; }
 
 	register16_t& MEMPTR() { return m_memptr; }
 
@@ -97,10 +91,7 @@ private:
 	register16_t m_accumulatorFlag;
 
 	uint8_t m_refresh;
-	uint8_t iv;
-	int m_interruptMode;
-	bool m_iff1;
-	bool m_iff2;
+	bool m_ime;
 
 	register16_t m_memptr;
 
@@ -113,9 +104,9 @@ private:
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
 
-	void fetchExecute() {
+	int fetchExecute() {
 		M1() = true;
-		execute(fetchByteExecute());
+		return execute(fetchByteExecute());
 	}
 
 	uint8_t fetchByteExecute() {
@@ -254,7 +245,6 @@ private:
 	void jrConditionalFlag(int flag);
 
 	void ret();
-	void retn();
 	void reti();
 
 	void returnConditional(int condition);
