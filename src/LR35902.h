@@ -7,15 +7,10 @@
 class LR35902 : public Processor {
 public:
 	enum StatusBits {
-		SF = Bit7,
-		ZF = Bit6,
-		YF = Bit5,
-		HC = Bit4,
-		XF = Bit3,
-		PF = Bit2,
-		VF = Bit2,
-		NF = Bit1,
-		CF = Bit0,
+		ZF = Bit7,
+		NF = Bit6,
+		HC = Bit5,
+		CF = Bit4,
 	};
 
 	LR35902(Memory& memory, InputOutput& ports);
@@ -113,8 +108,6 @@ private:
 
 	bool m_prefixCB;
 
-	int8_t m_displacement;
-
 	bool m_stopped;
 
 	std::array<bool, 8> m_halfCarryTableAdd = { { false, false, true, false, true, false, true, true } };
@@ -153,7 +146,7 @@ private:
 	void clearFlag(int flag, uint32_t condition) { clearFlag(flag, condition != 0); }
 	void clearFlag(int flag, bool condition) { condition ? clearFlag(flag) : setFlag(flag); }
 
-	uint8_t& R(int r, bool followPrefix = true) {
+	uint8_t& R(int r) {
 		switch (r) {
 		case 0:
 			return B();
@@ -250,12 +243,7 @@ private:
 	void executeCB(int x, int y, int z, int p, int q);
 	void executeOther(int x, int y, int z, int p, int q);
 
-	void adjustSign(uint8_t value);
 	void adjustZero(uint8_t value);
-	void adjustParity(uint8_t value);
-	void adjustSZP(uint8_t value);
-
-	void adjustXYFlags(uint8_t value);
 
 	void postIncrement(uint8_t value);
 	void postDecrement(uint8_t value);
@@ -308,7 +296,6 @@ private:
 	void rr(uint8_t& operand);
 	void sla(uint8_t& operand);
 	void sra(uint8_t& operand);
-	void sll(uint8_t& operand);
 	void srl(uint8_t& operand);
 
 	void bit(int n, uint8_t& operand);
@@ -322,34 +309,6 @@ private:
 	void cpl();
 
 	void swap(uint8_t& operand);
-
-	void cp(uint16_t source);
-
-	void cpi();
-	void cpir();
-
-	void cpd();
-	void cpdr();
-
-	void blockLoad(uint16_t source, uint16_t destination);
-
-	void ldi();
-	void ldir();
-
-	void ldd();
-	void lddr();
-
-	void ini();
-	void inir();
-
-	void ind();
-	void indr();
-
-	void outi();
-	void otir();
-
-	void outd();
-	void otdr();
 
 	void neg();
 

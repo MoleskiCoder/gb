@@ -74,47 +74,19 @@ void LR35902::interrupt(bool maskable, uint8_t value) {
 	}
 }
 
-void LR35902::adjustSign(uint8_t value) {
-	setFlag(SF, value & SF);
-}
-
 void LR35902::adjustZero(uint8_t value) {
 	clearFlag(ZF, value);
 }
 
-void LR35902::adjustParity(uint8_t value) {
-	static const uint8_t lookup[0x10] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
-	auto set = (lookup[highNibble(value)] + lookup[lowNibble(value)]);
-	auto even = (set % 2) == 0;
-	setFlag(PF, even);
-}
-
-void LR35902::adjustSZP(uint8_t value) {
-	adjustSign(value);
-	adjustZero(value);
-	adjustParity(value);
-}
-
-void LR35902::adjustXYFlags(uint8_t value) {
-	setFlag(XF, value & XF);
-	setFlag(YF, value & YF);
-}
-
 void LR35902::postIncrement(uint8_t value) {
-	adjustSign(value);
 	adjustZero(value);
-	adjustXYFlags(value);
 	clearFlag(NF);
-	setFlag(VF, value == Bit7);
 	clearFlag(HC, lowNibble(value));
 }
 
 void LR35902::postDecrement(uint8_t value) {
-	adjustSign(value);
 	adjustZero(value);
-	adjustXYFlags(value);
 	setFlag(NF);
-	setFlag(VF, value == Mask7);
 	clearFlag(HC, lowNibble(value + 1));
 }
 
@@ -146,16 +118,10 @@ void LR35902::jrConditionalFlag(int flag) {
 		jrConditional(F() & CF);
 		break;
 	case 4:	// PO
-		jrConditional(!(F() & PF));
-		break;
 	case 5:	// PE
-		jrConditional(F() & PF);
-		break;
 	case 6:	// P
-		jrConditional(!(F() & SF));
-		break;
 	case 7:	// M
-		jrConditional(F() & SF);
+		cycles -= 5;
 		break;
 	}
 }
@@ -302,8 +268,6 @@ uint16_t LR35902::sbc(uint16_t value) {
 
 	auto hl = RP(HL_IDX);
 
-	auto negativeHL = (hl & Bit15) != 0;
-	auto negativeValue = (value & Bit15) != 0;
 	auto high = Memory::highByte(hl);
 	auto highValue = Memory::highByte(value);
 	auto applyCarry = F() & CF;
@@ -311,24 +275,13 @@ uint16_t LR35902::sbc(uint16_t value) {
 	uint32_t result = (int)hl - (int)value;
 	if (applyCarry)
 		--result;
-	auto negativeResult = (result & Bit15) != 0;
 	auto highResult = Memory::highByte(result);
 
-	setFlag(SF, negativeResult);
 	clearFlag(ZF, result);
 	adjustHalfCarrySub(high, highValue, highResult);
 
-	auto sameOperandSign = negativeHL == negativeValue;
-	auto overflow = false;
-	if (!sameOperandSign) {
-		overflow = (negativeHL != negativeResult);
-	}
-	setFlag(VF, overflow);
-
 	setFlag(NF);
 	setFlag(CF, result & Bit16);
-
-	adjustXYFlags(highResult);
 
 	return result;
 }
@@ -337,8 +290,6 @@ uint16_t LR35902::adc(uint16_t value) {
 
 	auto hl = RP(HL_IDX);
 
-	auto negativeHL = (hl & Bit15) != 0;
-	auto negativeValue = (value & Bit15) != 0;
 	auto high = Memory::highByte(hl);
 	auto highValue = Memory::highByte(value);
 	auto applyCarry = F() & CF;
@@ -346,24 +297,13 @@ uint16_t LR35902::adc(uint16_t value) {
 	uint32_t result = (int)hl + (int)value;
 	if (applyCarry)
 		++result;
-	auto negativeResult = (result & Bit15) != 0;
 	auto highResult = Memory::highByte(result);
 
-	setFlag(SF, negativeResult);
 	clearFlag(ZF, result);
 	adjustHalfCarryAdd(high, highValue, highResult);
 
-	auto sameOperandSign = negativeHL == negativeValue;
-	auto overflow = false;
-	if (sameOperandSign) {
-		overflow = (negativeHL != negativeResult);
-	}
-	setFlag(VF, overflow);
-
 	clearFlag(NF);
 	setFlag(CF, result & Bit16);
-
-	adjustXYFlags(highResult);
 
 	return result;
 }
@@ -383,8 +323,6 @@ uint16_t LR35902::add(uint16_t value) {
 	setFlag(CF, result & Bit16);
 	adjustHalfCarryAdd(high, highValue, highResult);
 
-	adjustXYFlags(highResult);
-
 	return result;
 }
 
@@ -394,53 +332,26 @@ uint8_t LR35902::sbc(uint8_t value) {
 	if (F() & CF)
 		--result;
 
-	setFlag(SF, result & Bit7);
 	clearFlag(ZF, result);
 	adjustHalfCarrySub(A(), value, result);
-
-	auto beforeNegative = A() & Bit7;
-	auto valueNegative = value & Bit7;
-	auto sameOperandSign = beforeNegative == valueNegative;
-	auto overflow = false;
-	if (!sameOperandSign) {
-		auto afterNegative = result & Bit7;
-		overflow = (beforeNegative != afterNegative);
-	}
-	setFlag(VF, overflow);
 
 	setFlag(NF);
 	setFlag(CF, result & Bit8);
 
-	auto returned = (uint8_t)result;
-	adjustXYFlags(returned);
-
-	return returned;
+	return (uint8_t)result;
 }
 
 uint8_t LR35902::sub(uint8_t value) {
 
 	uint16_t result = A() - value;
 
-	setFlag(SF, result & Bit7);
 	clearFlag(ZF, result);
 	adjustHalfCarrySub(A(), value, result);
-
-	auto beforeNegative = A() & Bit7;
-	auto valueNegative = value & Bit7;
-	auto sameOperandSign = beforeNegative == valueNegative;
-	auto overflow = false;
-	if (!sameOperandSign) {
-		auto afterNegative = result & Bit7;
-		overflow = (beforeNegative != afterNegative);
-	}
-	setFlag(VF, overflow);
 
 	setFlag(NF);
 	setFlag(CF, result & Bit8);
 
-	auto returned = (uint8_t)result;
-	adjustXYFlags(returned);
-	return returned;
+	return (uint8_t)result;
 }
 
 uint8_t LR35902::adc(uint8_t value) {
@@ -449,52 +360,26 @@ uint8_t LR35902::adc(uint8_t value) {
 	if (F() & CF)
 		++result;
 
-	setFlag(SF, result & Bit7);
 	clearFlag(ZF, result);
 	adjustHalfCarryAdd(A(), value, result);
-
-	auto beforeNegative = A() & Bit7;
-	auto valueNegative = value & Bit7;
-	auto sameOperandSign = beforeNegative == valueNegative;
-	auto overflow = false;
-	if (sameOperandSign) {
-		auto afterNegative = result & Bit7;
-		overflow = (beforeNegative != afterNegative);
-	}
-	setFlag(VF, overflow);
 
 	clearFlag(NF);
 	setFlag(CF, result & Bit8);
 
-	auto returned = (uint8_t)result;
-	adjustXYFlags(returned);
-	return returned;
+	return (uint8_t)result;
 }
 
 uint8_t LR35902::add(uint8_t value) {
 
 	uint16_t result = A() + value;
 
-	setFlag(SF, result & Bit7);
 	clearFlag(ZF, result);
 	adjustHalfCarryAdd(A(), value, result);
-
-	auto beforeNegative = A() & Bit7;
-	auto valueNegative = value & Bit7;
-	auto sameOperandSign = beforeNegative == valueNegative;
-	auto overflow = false;
-	if (sameOperandSign) {
-		auto afterNegative = result & Bit7;
-		overflow = (beforeNegative != afterNegative);
-	}
-	setFlag(VF, overflow);
 
 	clearFlag(NF);
 	setFlag(CF, result & Bit8);
 
-	auto returned = (uint8_t)result;
-	adjustXYFlags(returned);
-	return returned;
+	return (uint8_t)result;
 }
 
 //
@@ -503,8 +388,7 @@ void LR35902::andr(uint8_t& operand, uint8_t value) {
 	setFlag(HC);
 	clearFlag(CF | NF);
 	operand &= value;
-	adjustSZP(operand);
-	adjustXYFlags(operand);
+	adjustZero(operand);
 }
 
 void LR35902::anda(uint8_t value) {
@@ -514,20 +398,17 @@ void LR35902::anda(uint8_t value) {
 void LR35902::xora(uint8_t value) {
 	clearFlag(HC | CF | NF);
 	A() ^= value;
-	adjustSZP(A());
-	adjustXYFlags(A());
+	adjustZero(A());
 }
 
 void LR35902::ora(uint8_t value) {
 	clearFlag(HC | CF | NF);
 	A() |= value;
-	adjustSZP(A());
-	adjustXYFlags(A());
+	adjustZero(A());
 }
 
 void LR35902::compare(uint8_t value) {
 	sub(value);
-	adjustXYFlags(value);
 }
 
 //
@@ -538,7 +419,6 @@ void LR35902::rlc(uint8_t& operand) {
 	setFlag(CF, carry);
 	carry ? operand |= Bit0 : operand &= ~Bit0;
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 void LR35902::rrc(uint8_t& operand) {
@@ -547,7 +427,6 @@ void LR35902::rrc(uint8_t& operand) {
 	carry ? operand |= Bit7 : operand &= ~Bit7;
 	setFlag(CF, carry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 void LR35902::rl(uint8_t& operand) {
@@ -557,7 +436,6 @@ void LR35902::rl(uint8_t& operand) {
 	oldCarry ? operand |= Bit0 : operand &= ~Bit0;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 void LR35902::rr(uint8_t& operand) {
@@ -567,7 +445,6 @@ void LR35902::rr(uint8_t& operand) {
 	operand |= oldCarry << 7;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 //
@@ -577,7 +454,6 @@ void LR35902::sla(uint8_t& operand) {
 	operand <<= 1;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 void LR35902::sra(uint8_t& operand) {
@@ -587,16 +463,6 @@ void LR35902::sra(uint8_t& operand) {
 	operand |= new7;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
-}
-
-void LR35902::sll(uint8_t& operand) {
-	auto newCarry = operand & Bit7;
-	operand <<= 1;
-	operand |= 1;
-	setFlag(CF, newCarry);
-	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 }
 
 void LR35902::srl(uint8_t& operand) {
@@ -605,7 +471,6 @@ void LR35902::srl(uint8_t& operand) {
 	operand &= ~Bit7;	// clear bit 7
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	adjustXYFlags(operand);
 	setFlag(ZF, operand);
 }
 
@@ -633,7 +498,6 @@ void LR35902::bit(int n, uint8_t& operand) {
 	auto carry = F() & CF;
 	uint8_t discarded = operand;
 	andr(discarded, 1 << n);
-	clearFlag(PF, discarded);
 	setFlag(CF, carry);
 }
 
@@ -670,21 +534,18 @@ void LR35902::daa() {
 
 	F() = (F() & (CF | NF)) | (A() > 0x99) | ((A() ^ a) & HC);
 
-	adjustSZP(a);
-	adjustXYFlags(a);
+	adjustZero(a);
 
 	A() = a;
 }
 
 void LR35902::cpl() {
 	A() = ~A();
-	adjustXYFlags(A());
 	setFlag(HC | NF);
 }
 
 void LR35902::scf() {
 	setFlag(CF);
-	adjustXYFlags(A());
 	clearFlag(HC | NF);
 }
 
@@ -693,7 +554,6 @@ void LR35902::ccf() {
 	setFlag(HC, carry);
 	clearFlag(CF, carry);
 	clearFlag(NF);
-	adjustXYFlags(A());
 }
 
 void LR35902::swap(uint8_t& operand) {
@@ -704,191 +564,10 @@ void LR35902::swap(uint8_t& operand) {
 	clearFlag(NF | HC | CF);
 }
 
-void LR35902::cp(uint16_t source) {
-	auto value = m_memory.get(source);
-	uint8_t result = A() - value;
-
-	setFlag(PF, --BC().word);
-
-	setFlag(SF, result & Bit7);
-	clearFlag(ZF, result);
-	adjustHalfCarrySub(A(), value, result);
-	setFlag(NF);
-
-	if (F() & HC)
-		result -= 1;
-
-	setFlag(YF, result & Bit1);
-	setFlag(XF, result & Bit3);
-}
-
-void LR35902::cpi() {
-	cp(HL().word++);
-	MEMPTR().word++;
-}
-
-void LR35902::cpd() {
-	cp(HL().word--);
-	MEMPTR().word--;
-}
-
-void LR35902::blockLoad(uint16_t source, uint16_t destination) {
-	auto value = m_memory.get(source);
-	m_memory.set(destination, value);
-	auto xy = A() + value;
-	setFlag(XF, xy & 8);
-	setFlag(YF, xy & 2);
-	clearFlag(NF | HC);
-	setFlag(PF, --BC().word);
-}
-
-void LR35902::ldd() {
-	auto source = HL().word--;
-	auto destination = DE().word--;
-	blockLoad(source, destination);
-}
-
-void LR35902::ldi() {
-	auto source = HL().word++;
-	auto destination = DE().word++;
-	blockLoad(source, destination);
-}
-
-void LR35902::ldir() {
-
-	auto bc = BC().word;
-
-	ldi();
-	if (F() & PF) {		// See LDI
-		cycles += 5;
-		pc -= 2;
-	}
-
-	if (bc != 1)
-		MEMPTR().word = pc + 1;
-}
-
-void LR35902::lddr() {
-
-	auto bc = BC().word;
-
-	ldd();
-	if (F() & PF) {		// See LDR
-		cycles += 5;
-		pc -= 2;
-	}
-
-	if (bc != 1)
-		MEMPTR().word = pc + 1;
-}
-
-void LR35902::cpir() {
-	cpi();
-	if ((F() & PF) && ((F() & ZF) == 0)) {		// See CPI
-		cycles += 5;
-		pc -= 2;
-	}
-	MEMPTR().word = pc + 1;
-}
-
-void LR35902::cpdr() {
-	cpd();
-	if ((F() & PF) && ((F() & ZF) == 0)) {		// See CPD
-		cycles += 5;
-		pc -= 2;
-	}
-	MEMPTR().word = pc + 1;
-}
-
-void LR35902::ini() {
-	auto bc = BC().word;
-	auto port = C();
-	auto value = m_ports.read(port);
-	auto address = HL().word;
-	m_memory.set(address, value);
-	postDecrement(--B());
-	setFlag(NF);
-	HL().word++;
-	MEMPTR().word = bc + 1;
-}
-
-void LR35902::inir() {
-	ini();
-	if ((F() & ZF) != 0) {		// See INI
-		cycles += 5;
-		pc -= 2;
-	}
-}
-
-void LR35902::ind() {
-	auto bc = BC().word;
-	auto port = C();
-	auto value = m_ports.read(port);
-	auto address = HL().word;
-	m_memory.set(address, value);
-	postDecrement(--B());
-	setFlag(NF, value & Bit7);
-	HL().word--;
-	setFlag(HC | CF, (value + ((C() - 1) & 0xff) > 0xff));
-	adjustParity(((value + ((C() - 1) & 0xff)) & 7) ^ B());
-	MEMPTR().word = bc - 1;
-}
-
-void LR35902::indr() {
-	ind();
-	if ((F() & ZF) != 0) {		// See IND
-		cycles += 5;
-		pc -= 2;
-	}
-}
-
-void LR35902::outi() {
-	auto address = HL().word;
-	auto value = m_memory.get(address);
-	auto port = C();
-	m_ports.write(port, value);
-	postDecrement(--B());
-	setFlag(NF, value & Bit7);
-	HL().word++;
-	setFlag(HC | CF, (L() + value) > 0xff);
-	adjustParity(((value + L()) & 7) ^ B());
-	MEMPTR().word = BC().word + 1;
-}
-
-void LR35902::otir() {
-	outi();
-	if ((F() & ZF) != 0) {		// See OUTI
-		cycles += 5;
-		pc -= 2;
-	}
-}
-
-void LR35902::outd() {
-	auto address = HL().word;
-	auto value = m_memory.get(address);
-	auto port = C();
-	m_ports.write(port, value);
-	postDecrement(--B());
-	setFlag(NF, value & Bit7);
-	HL().word++;
-	setFlag(HC | CF, (L() + value) > 0xff);
-	adjustParity(((value + L()) & 7) ^ B());
-	MEMPTR().word = BC().word - 1;
-}
-
-void LR35902::otdr() {
-	outd();
-	if ((F() & ZF) != 0) {		// See OUTD
-		cycles += 5;
-		pc -= 2;
-	}
-}
-
 void LR35902::neg() {
 	auto original = A();
 	A() = 0;
 	A() = sub(original);
-	setFlag(PF, original == 0x80);
 	setFlag(CF, original != 0);
 }
 
@@ -898,8 +577,7 @@ void LR35902::rrd() {
 	A() = (accumulator & 0xf0) | lowNibble(memory);
 	uint8_t updated = promoteNibble(lowNibble(accumulator)) | highNibble(memory);
 	m_memory.set(HL().word, updated);
-	adjustSZP(A());
-	adjustXYFlags(A());
+	adjustZero(A());
 	clearFlag(NF | HC);
 	MEMPTR().word = HL().word + 1;
 }
@@ -910,8 +588,7 @@ void LR35902::rld() {
 	uint8_t updated = lowNibble(accumulator) | promoteNibble(memory);
 	A() = (accumulator & 0xf0) | highNibble(memory);
 	m_memory.set(HL().word, updated);
-	adjustSZP(A());
-	adjustXYFlags(A());
+	adjustZero(A());
 	clearFlag(NF | HC);
 	MEMPTR().word = HL().word + 1;
 }
@@ -919,8 +596,7 @@ void LR35902::rld() {
 void LR35902::readPort(uint8_t& operand, uint8_t port) {
 	auto bc = BC().word;
 	operand = m_ports.read(port);
-	adjustSZP(operand);
-	adjustXYFlags(operand);
+	adjustZero(operand);
 	clearFlag(HC | NF);
 	MEMPTR().word = bc + 1;
 }
@@ -981,13 +657,13 @@ void LR35902::executeCB(int x, int y, int z, int p, int q) {
 			sra(R(z));
 			break;
 		case 6:
-			sll(R(z));
+			swap(R(z));
 			break;
 		case 7:
 			srl(R(z));
 			break;
 		}
-		adjustSZP(R(z));
+		adjustZero(R(z));
 		cycles += 8;
 		if (z == 6)
 			cycles += 7;
@@ -996,12 +672,8 @@ void LR35902::executeCB(int x, int y, int z, int p, int q) {
 			auto operand = R(z);
 			bit(y, operand);
 			cycles += 8;
-			if (z == 6) {
-				adjustXYFlags(MEMPTR().high);
+			if (z == 6)
 				cycles += 4;
-			} else {
-				adjustXYFlags(operand);
-			}
 		}
 		break;
 	case 2:	// RES y, r[z]
@@ -1018,9 +690,6 @@ void LR35902::executeCB(int x, int y, int z, int p, int q) {
 		break;
 	}
 }
-
-
-	// CB3X    SLL  r / (HL)	SWAP r / (HL)
 
 void LR35902::executeOther(int x, int y, int z, int p, int q) {
 	switch (x) {

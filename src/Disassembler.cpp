@@ -484,15 +484,15 @@ std::string Disassembler::flag(uint8_t value, int flag, const std::string& repre
 std::string Disassembler::flags(uint8_t value) {
 	std::ostringstream output;
 	output
-		<< flag(value, LR35902::SF, "S")
 		<< flag(value, LR35902::ZF, "Z")
-		<< flag(value, LR35902::YF, "Y")
-		<< flag(value, LR35902::HC, "H")
-		<< flag(value, LR35902::XF, "X")
-		<< flag(value, LR35902::PF, "P")
 		<< flag(value, LR35902::NF, "N")
-		<< flag(value, LR35902::CF, "C");
-	return output.str();
+		<< flag(value, LR35902::HC, "H")
+		<< flag(value, LR35902::CF, "C")
+		<< flag(value, Processor::Bit3, "+")
+		<< flag(value, Processor::Bit2, "+")
+		<< flag(value, Processor::Bit1, "+")
+		<< flag(value, Processor::Bit0, "+");
+		return output.str();
 }
 
 std::string Disassembler::hex(uint8_t value) {
