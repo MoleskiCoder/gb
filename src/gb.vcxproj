@@ -146,7 +146,6 @@
     <ClInclude Include="Board.h" />
     <ClInclude Include="ColourPalette.h" />
     <ClInclude Include="Configuration.h" />
-    <ClInclude Include="CpuEventArgs.h" />
     <ClInclude Include="Disassembler.h" />
     <ClInclude Include="EventArgs.h" />
     <ClInclude Include="Computer.h" />
@@ -164,7 +163,6 @@
     <ClCompile Include="Board.cpp" />
     <ClCompile Include="ColourPalette.cpp" />
     <ClCompile Include="Configuration.cpp" />
-    <ClCompile Include="CpuEventArgs.cpp" />
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="InputOutput.cpp" />
