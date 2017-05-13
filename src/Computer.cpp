@@ -20,6 +20,7 @@ void Computer::initialise() {
 	verifySDLCall(::SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC), "Failed to initialise SDL: ");
 
 	m_board.initialise();
+	m_board.DrawingLine.connect(std::bind(&Computer::Board_DrawingLine, this, std::placeholders::_1));
 
 	auto windowWidth = getScreenWidth();
 	auto windowHeight = getScreenHeight();
@@ -147,8 +148,119 @@ void Computer::handleKeyDown(SDL_Keycode key) {
 void Computer::handleKeyUp(SDL_Keycode key) {
 }
 
+#include <bitset>
+
 void Computer::drawFrame() {
 	
+
+
+
+
+		auto control = m_board.BUS().REG_LCDC();
+
+		auto on = control & Processor::Bit7;
+		if (on) {
+			auto windowTileMapDisplaySelect = control & Processor::Bit6;
+			auto windowDisplay = control & Processor::Bit5;
+			auto backgroundAndWindowTileDataSelect = control & Processor::Bit4;
+			auto backgroundTileMapDisplaySelect = control & Processor::Bit3;
+			auto spriteSize = control & Processor::Bit2;
+			auto spriteDisplay = control & Processor::Bit1;
+			auto backgroundAndWindowDisplay = control & Processor::Bit0;
+
+			auto windowTileMapDisplayAddress = windowTileMapDisplaySelect ? 0x9c00 : 0x9800;
+			auto backgroundAndWindowTileDataAddress = backgroundAndWindowTileDataSelect ? 0x8000 : 0x8800;
+			auto backgroundTileMapDisplayAddress = backgroundTileMapDisplaySelect ? 0x9c00 : 0x9800;
+			auto spriteHeight = spriteSize ? 16 : 8;
+
+			auto scrollX = m_board.BUS().REG_SCX();
+			auto scrollY = m_board.BUS().REG_SCY();
+
+			auto videoRam = Bus::VideoRam;
+
+				//std::cout << std::endl << "**Tiles:" << std::endl;
+				//for (auto tileRow = 0; tileRow < 32; ++tileRow) {
+				//	for (auto tileColumn = 0; tileColumn < 32; ++tileColumn) {
+				//		auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
+				//		auto tile = m_board.BUS().peek(tileAddress);
+				//		std::cout << Disassembler::hex(tile);
+				//	}
+				//	std::cout << std::endl;
+				//}
+				//std::cout << std::endl << "**" << std::endl;
+
+
+				// backgroundAndWindowTileDataAddress
+
+			auto black = m_colours.getColour(ColourPalette::Black);
+			auto white = m_colours.getColour(ColourPalette::White);
+
+				if (backgroundAndWindowTileDataAddress == 0x8000) {
+
+					// Assumes scrollX == scrollY == 0
+					for (auto tileRow = 0; tileRow < 20; ++tileRow) {
+						for (auto tileColumn = 0; tileColumn < 18; ++tileColumn) {
+
+							auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
+							auto tile = m_board.BUS().peek(tileAddress);
+
+							auto data = backgroundAndWindowTileDataAddress + tile * 8;
+							for (int y = 0; y < 8; ++y) {
+								auto value = m_board.BUS().peek(data + y);
+								for (int bit = 0; bit < 8; ++bit) {
+									auto mask = 1 << bit;
+									auto inputPixel = value & mask;
+									auto colour = inputPixel ? white : black;
+									auto outputPixel = (tileRow + y) * Board::RasterWidth + tileColumn * 8 + bit;
+									m_pixels[outputPixel] = colour;
+
+								}
+
+							}
+
+						}
+					}
+
+
+					// unsigned tile specification!
+
+					//backgroundTileMapDisplayAddress
+
+				}
+			/*
+		auto black = m_colours.getColour(ColourPalette::Black);
+		auto white = m_colours.getColour(ColourPalette::White);
+
+		auto bytesPerLine = Board::RasterWidth / 8;
+		auto begin = videoRam + (scrollY + y) / 8 + scrollX / 8;
+		auto x = 0;
+		for (auto byte = 0; byte < bytesPerLine; ++byte) {
+			auto value = m_board.BUS().peek(begin + byte);
+			for (int bit = 0; bit < 8; ++bit) {
+				auto mask = 1 << bit;
+				auto inputPixel = value & mask;
+				auto colour = inputPixel ? white : black;
+				auto outputPixel = x++ + y * Board::RasterWidth;
+				m_pixels[outputPixel] = colour;
+
+			}
+		}
+		*/
+		//std::cout << "line=" << (int)line << ", SCX=" << (int)scrollX << ",SCY=" << (int)scrollY << std::endl;
+
+
+
+		}
+
+
+
+
+
+
+
+
+
+
 	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_pixels[0], Board::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 
 	verifySDLCall(
@@ -173,4 +285,77 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	int vsync = (flags & SDL_RENDERER_PRESENTVSYNC) != 0;
 	int targetTexture = (flags & SDL_RENDERER_TARGETTEXTURE) != 0;
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
+}
+
+void Computer::Board_DrawingLine(Board& board) {
+
+	//auto y = board.BUS().REG_LY();
+	//if (y == Board::RasterHeight) {
+
+	//	auto control = board.BUS().REG_LCDC();
+
+	//	auto on = control & Processor::Bit7;
+	//	if (on) {
+	//		auto windowTileMapDisplaySelect = control & Processor::Bit6;
+	//		auto windowDisplay = control & Processor::Bit5;
+	//		auto backgroundAndWindowTileDataSelect = control & Processor::Bit4;
+	//		auto backgroundTileMapDisplaySelect = control & Processor::Bit3;
+	//		auto spriteSize = control & Processor::Bit2;
+	//		auto spriteDisplay = control & Processor::Bit1;
+	//		auto backgroundAndWindowDisplay = control & Processor::Bit0;
+
+	//		auto windowTileMapDisplayAddress = windowTileMapDisplaySelect ? 0x9c00 : 0x9800;
+	//		auto backgroundAndWindowTileDataAddress = backgroundAndWindowTileDataSelect ? 0x8000 : 0x8800;
+	//		auto backgroundTileMapDisplayAddress = backgroundTileMapDisplaySelect ? 0x9c00 : 0x9800;
+	//		auto spriteHeight = spriteSize ? 16 : 8;
+
+	//		auto scrollX = board.BUS().REG_SCX();
+	//		auto scrollY = board.BUS().REG_SCY();
+
+	//		auto videoRam = Bus::VideoRam;
+
+	//		if (y == 0) {
+	//			std::cout << std::endl << "**Tiles:" << std::endl;
+	//			for (auto tileRow = 0; tileRow < 32; ++tileRow) {
+	//				for (auto tileColumn = 0; tileColumn < 32; ++tileColumn) {
+	//					auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
+	//					auto tile = m_board.BUS().peek(tileAddress);
+	//					std::cout << Disassembler::hex(tile);
+	//				}
+	//				std::cout << std::endl;
+	//			}
+	//			std::cout << std::endl << "**" << std::endl;
+
+
+	//			// backgroundAndWindowTileDataAddress
+
+	//			if (backgroundAndWindowTileDataAddress == 0x8000) {
+	//				// unsigned tile specification!
+
+	//				//backgroundTileMapDisplayAddress
+
+	//			}
+	//		}
+	//			/*
+	//		auto black = m_colours.getColour(ColourPalette::Black);
+	//		auto white = m_colours.getColour(ColourPalette::White);
+
+	//		auto bytesPerLine = Board::RasterWidth / 8;
+	//		auto begin = videoRam + (scrollY + y) / 8 + scrollX / 8;
+	//		auto x = 0;
+	//		for (auto byte = 0; byte < bytesPerLine; ++byte) {
+	//			auto value = m_board.BUS().peek(begin + byte);
+	//			for (int bit = 0; bit < 8; ++bit) {
+	//				auto mask = 1 << bit;
+	//				auto inputPixel = value & mask;
+	//				auto colour = inputPixel ? white : black;
+	//				auto outputPixel = x++ + y * Board::RasterWidth;
+	//				m_pixels[outputPixel] = colour;
+
+	//			}
+	//		}
+	//		*/
+	//		//std::cout << "line=" << (int)line << ", SCX=" << (int)scrollX << ",SCY=" << (int)scrollY << std::endl;
+		//}
+
 }

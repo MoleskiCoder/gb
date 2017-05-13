@@ -69,4 +69,6 @@ private:
 
 	static void dumpRendererInformation();
 	static void dumpRendererInformation(::SDL_RendererInfo info);
+
+	void Board_DrawingLine(Board& board);
 };

@@ -41,6 +41,7 @@ void Board::initialise() {
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Debug, this, std::placeholders::_1));
 	}
 
+	m_bus.reset();
 	m_cpu.initialise();
 	m_cpu.setProgramCounter(m_configuration.getStartAddress());
 }

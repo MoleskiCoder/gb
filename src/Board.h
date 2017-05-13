@@ -9,6 +9,7 @@
 #include "Profiler.h"
 #include "Disassembler.h"
 #include "EventArgs.h"
+#include "Signal.h"
 
 class Board {
 public:
@@ -20,6 +21,8 @@ public:
 	};
 
 	Board(const Configuration& configuration);
+
+	Signal<Board> DrawingLine;
 
 	Bus& BUS() { return m_bus; }
 	const LR35902& getCPU() const { return m_cpu; }
@@ -51,6 +54,7 @@ public:
 	}
 
 	int runHorizontalLine() {
+		DrawingLine.fire(*this);
 		auto cycles = runToLimit(getCyclesPerLine());
 		BUS().incrementLY();
 		if ((BUS().REG_LYC() == BUS().REG_LY()) && (BUS().REG_STAT() & Processor::Bit6))

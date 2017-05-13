@@ -15,6 +15,7 @@ LR35902::LR35902(Memory& memory, InputOutput& ports)
 
 void LR35902::reset() {
 	Processor::reset();
+	setStackPointer(0xfffe);
 	di();
 }
 
