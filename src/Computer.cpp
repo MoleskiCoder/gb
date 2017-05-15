@@ -152,81 +152,113 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 
 void Computer::drawFrame() {
 	
+	auto control = m_board.BUS().REG(Bus::LCDC);
+	auto on = control & Processor::Bit7;
+	if (on) {
+
+		auto windowArea = (control & Processor::Bit6) ? 0x9c00 : 0x9800;
+		auto window = (control & Processor::Bit5) != 0;
+		auto bgCharacters = (control & Processor::Bit4) ? 0x8000 : 0x8800;
+		auto bgArea = (control & Processor::Bit3) ? 0x9c00 : 0x9800;
+		auto objBlockHeight = (control & Processor::Bit2) ? 16 : 8;
+		auto objDisplay = (control & Processor::Bit1) != 0;
+		auto bgDisplay = (control & Processor::Bit0) != 0;
+
+		auto scrollX = m_board.BUS().REG(Bus::SCX);
+		auto scrollY = m_board.BUS().REG(Bus::SCY);
+
+		auto wx = m_board.BUS().REG(Bus::WX);
+		auto wy = m_board.BUS().REG(Bus::WY);
+
+		for (int y = 0; y < Board::RasterHeight; ++y) {
+			for (int x = 0; x < Board::RasterWidth; ++x) {
+				auto colour = m_colours.getColour(rand() % 4);
+					m_pixels[y * Board::RasterWidth + x] = colour;
+			}
+		}
+
+		//std::cout << "Character tile data::" << std::endl;
+		//for (int row = 0; row < Board::BufferCharacterHeight; ++row) {
+		//	for (int column = 0; column < Board::BufferCharacterWidth; ++column) {
+		//		auto address = bgCharacters + row * Board::BufferCharacterWidth + column;
+		//		auto character = m_board.BUS().peek(address);
+		//		std::cout << Disassembler::hex(character) << " ";
+		//	}
+		//	std::cout << std::endl;
+		//}
+	}
+
+		//auto control = m_board.BUS().REG_LCDC();
+
+		//auto on = control & Processor::Bit7;
+		//if (on) {
+		//	auto windowTileMapDisplaySelect = control & Processor::Bit6;
+		//	auto windowDisplay = control & Processor::Bit5;
+		//	auto backgroundAndWindowTileDataSelect = control & Processor::Bit4;
+		//	auto backgroundTileMapDisplaySelect = control & Processor::Bit3;
+		//	auto spriteSize = control & Processor::Bit2;
+		//	auto spriteDisplay = control & Processor::Bit1;
+		//	auto backgroundAndWindowDisplay = control & Processor::Bit0;
+
+		//	auto windowTileMapDisplayAddress = windowTileMapDisplaySelect ? 0x9c00 : 0x9800;
+		//	auto backgroundAndWindowTileDataAddress = backgroundAndWindowTileDataSelect ? 0x8000 : 0x8800;
+		//	auto backgroundTileMapDisplayAddress = backgroundTileMapDisplaySelect ? 0x9c00 : 0x9800;
+		//	auto spriteHeight = spriteSize ? 16 : 8;
+
+		//	auto scrollX = m_board.BUS().REG_SCX();
+		//	auto scrollY = m_board.BUS().REG_SCY();
+
+		//	auto videoRam = Bus::VideoRam;
+
+		//		//std::cout << std::endl << "**Tiles:" << std::endl;
+		//		//for (auto tileRow = 0; tileRow < 32; ++tileRow) {
+		//		//	for (auto tileColumn = 0; tileColumn < 32; ++tileColumn) {
+		//		//		auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
+		//		//		auto tile = m_board.BUS().peek(tileAddress);
+		//		//		std::cout << Disassembler::hex(tile);
+		//		//	}
+		//		//	std::cout << std::endl;
+		//		//}
+		//		//std::cout << std::endl << "**" << std::endl;
 
 
+		//		// backgroundAndWindowTileDataAddress
+
+		//	auto black = m_colours.getColour(ColourPalette::Black);
+		//	auto white = m_colours.getColour(ColourPalette::White);
+
+		//		if (backgroundAndWindowTileDataAddress == 0x8000) {
+
+		//			// Assumes scrollX == scrollY == 0
+		//			for (auto tileRow = 0; tileRow < 20; ++tileRow) {
+		//				for (auto tileColumn = 0; tileColumn < 18; ++tileColumn) {
+
+		//					auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
+		//					auto tile = m_board.BUS().peek(tileAddress);
+
+		//					auto data = backgroundAndWindowTileDataAddress + tile * 8;
+		//					for (int y = 0; y < 8; ++y) {
+		//						auto value = m_board.BUS().peek(data + y);
+		//						for (int bit = 0; bit < 8; ++bit) {
+		//							auto mask = 1 << bit;
+		//							auto inputPixel = value & mask;
+		//							auto colour = inputPixel ? white : black;
+		//							auto outputPixel = (tileRow + y) * Board::RasterWidth + tileColumn * 8 + bit;
+		//							m_pixels[outputPixel] = colour;
+
+		//						}
+
+		//					}
+
+		//				}
+		//			}
 
 
-		auto control = m_board.BUS().REG_LCDC();
+		//			// unsigned tile specification!
 
-		auto on = control & Processor::Bit7;
-		if (on) {
-			auto windowTileMapDisplaySelect = control & Processor::Bit6;
-			auto windowDisplay = control & Processor::Bit5;
-			auto backgroundAndWindowTileDataSelect = control & Processor::Bit4;
-			auto backgroundTileMapDisplaySelect = control & Processor::Bit3;
-			auto spriteSize = control & Processor::Bit2;
-			auto spriteDisplay = control & Processor::Bit1;
-			auto backgroundAndWindowDisplay = control & Processor::Bit0;
+		//			//backgroundTileMapDisplayAddress
 
-			auto windowTileMapDisplayAddress = windowTileMapDisplaySelect ? 0x9c00 : 0x9800;
-			auto backgroundAndWindowTileDataAddress = backgroundAndWindowTileDataSelect ? 0x8000 : 0x8800;
-			auto backgroundTileMapDisplayAddress = backgroundTileMapDisplaySelect ? 0x9c00 : 0x9800;
-			auto spriteHeight = spriteSize ? 16 : 8;
-
-			auto scrollX = m_board.BUS().REG_SCX();
-			auto scrollY = m_board.BUS().REG_SCY();
-
-			auto videoRam = Bus::VideoRam;
-
-				//std::cout << std::endl << "**Tiles:" << std::endl;
-				//for (auto tileRow = 0; tileRow < 32; ++tileRow) {
-				//	for (auto tileColumn = 0; tileColumn < 32; ++tileColumn) {
-				//		auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
-				//		auto tile = m_board.BUS().peek(tileAddress);
-				//		std::cout << Disassembler::hex(tile);
-				//	}
-				//	std::cout << std::endl;
-				//}
-				//std::cout << std::endl << "**" << std::endl;
-
-
-				// backgroundAndWindowTileDataAddress
-
-			auto black = m_colours.getColour(ColourPalette::Black);
-			auto white = m_colours.getColour(ColourPalette::White);
-
-				if (backgroundAndWindowTileDataAddress == 0x8000) {
-
-					// Assumes scrollX == scrollY == 0
-					for (auto tileRow = 0; tileRow < 20; ++tileRow) {
-						for (auto tileColumn = 0; tileColumn < 18; ++tileColumn) {
-
-							auto tileAddress = backgroundTileMapDisplayAddress + tileRow * 32 + tileColumn;
-							auto tile = m_board.BUS().peek(tileAddress);
-
-							auto data = backgroundAndWindowTileDataAddress + tile * 8;
-							for (int y = 0; y < 8; ++y) {
-								auto value = m_board.BUS().peek(data + y);
-								for (int bit = 0; bit < 8; ++bit) {
-									auto mask = 1 << bit;
-									auto inputPixel = value & mask;
-									auto colour = inputPixel ? white : black;
-									auto outputPixel = (tileRow + y) * Board::RasterWidth + tileColumn * 8 + bit;
-									m_pixels[outputPixel] = colour;
-
-								}
-
-							}
-
-						}
-					}
-
-
-					// unsigned tile specification!
-
-					//backgroundTileMapDisplayAddress
-
-				}
+		//		}
 			/*
 		auto black = m_colours.getColour(ColourPalette::Black);
 		auto white = m_colours.getColour(ColourPalette::White);
@@ -250,7 +282,7 @@ void Computer::drawFrame() {
 
 
 
-		}
+		//}
 
 
 

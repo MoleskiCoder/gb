@@ -69,44 +69,35 @@ public:
 
 		WPRAM_START = 0x30,
 		WPRAM_END = 0x3F,
+
+		// Boot rom control
+		BOOT_DISABLE = 0x50,
 	};
 
 	Bus();
 
 	void reset();
 
-	uint8_t& REG_P1() { return reference(BASE + P1); }
-	uint8_t& REG_SB() { return reference(BASE + SB); }
-	uint8_t& REG_SC() { return reference(BASE + SC); }
-	uint8_t& REG_DIV() { return reference(BASE + DIV); }
-	uint8_t& REG_TIMA() { return reference(BASE + TIMA); }
-	uint8_t& REG_TMA() { return reference(BASE + TMA); }
-	uint8_t& REG_TAC() { return reference(BASE + TAC); }
-
-	uint8_t& REG_IF() {	return reference(BASE + IF); }
-	uint8_t& REG_IE() { return reference(BASE + IE); }
-
-	uint8_t& REG_LCDC() { return reference(BASE + LCDC); }
-	uint8_t& REG_STAT() { return reference(BASE + STAT); }
-	uint8_t& REG_SCY() { return reference(BASE + SCY); }
-	uint8_t& REG_SCX() { return reference(BASE + SCX); }
-	uint8_t& REG_LY() { return reference(BASE + LY); }
-	uint8_t& REG_LYC() { return reference(BASE + LYC); }
-	uint8_t& REG_DMA() { return reference(BASE + DMA); }
-	uint8_t& REG_BGP() { return reference(BASE + BGP); }
-	uint8_t& REG_OBP0() { return reference(BASE + OBP0); }
-	uint8_t& REG_OBP1() { return reference(BASE + OBP1); }
-	uint8_t& REG_WY() { return reference(BASE + WY); }
-	uint8_t& REG_WX() { return reference(BASE + WX); }
-
-	uint8_t& REG_NR52() { return reference(BASE + NR52); }
+	uint8_t& REG(int offset) { return Memory::reference(BASE + offset); }
 
 	void incrementLY() {
-		REG_LY() = (REG_LY() + 1) % TotalLineCount;
+		REG(LY) = (REG(LY) + 1) % TotalLineCount;
 	}
 
 	void resetLY() {
-		REG_LY() = 0;
+		REG(LY) = 0;
 	}
-};
 
+	void loadBootRom(const std::string& path);
+
+	bool isBootRom(uint16_t address) const {
+		return (address < m_boot.size()) && (peek(BASE + BOOT_DISABLE) == 0);
+	}
+
+	virtual uint8_t peek(uint16_t address) const;
+
+	virtual uint8_t& reference();
+
+private:
+	std::array<uint8_t, 0x100> m_boot;
+};

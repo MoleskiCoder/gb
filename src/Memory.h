@@ -26,6 +26,10 @@ public:
 	virtual void set(uint16_t address, uint8_t value);
 	virtual void setWord(uint16_t address, uint16_t value);
 
+	virtual uint16_t effectiveAddress(int address) const {
+		return address & m_addressMask;
+	}
+
 	virtual uint8_t& reference();
 	virtual uint8_t& reference(uint16_t address);
 

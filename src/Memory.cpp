@@ -43,7 +43,7 @@ void Memory::setWord(uint16_t address, uint16_t value) {
 }
 
 uint8_t& Memory::reference() {
-	uint16_t effective = ADDRESS() & m_addressMask;
+	uint16_t effective = effectiveAddress(ADDRESS());
 	return m_locked[effective] ? placeDATA(m_bus[effective]) : referenceDATA(m_bus[effective]);
 }
 

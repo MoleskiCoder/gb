@@ -8,8 +8,10 @@ struct SDL_PixelFormat;
 class ColourPalette {
 public:
 	enum {
-		Black,
-		White
+		Off,
+		Light,
+		Medium,
+		Dark
 	};
 
 	ColourPalette();

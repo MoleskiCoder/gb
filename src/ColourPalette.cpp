@@ -8,10 +8,8 @@ ColourPalette::ColourPalette()
 }
 
 void ColourPalette::load(SDL_PixelFormat* hardware) {
-
-	auto black = ::SDL_MapRGBA(hardware, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
-	auto white = ::SDL_MapRGBA(hardware, 0xff, 0xff, 0xff, SDL_ALPHA_OPAQUE);
-
-	m_colours[Black] = black;
-	m_colours[White] = white;
+	m_colours[Off] = ::SDL_MapRGBA(hardware, 0x9C, 0xBD, 0x0F, SDL_ALPHA_OPAQUE);
+	m_colours[Light] = ::SDL_MapRGBA(hardware, 0x8C, 0xAD, 0x0F, SDL_ALPHA_OPAQUE);
+	m_colours[Medium] = ::SDL_MapRGBA(hardware, 0x30, 0x62, 0x30, SDL_ALPHA_OPAQUE);
+	m_colours[Dark] = ::SDL_MapRGBA(hardware, 0x0F, 0x38, 0x0F, SDL_ALPHA_OPAQUE);
 }

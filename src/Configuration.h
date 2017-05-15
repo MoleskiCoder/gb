@@ -4,12 +4,6 @@
 
 class Configuration {
 public:
-	enum MachineMode {
-		Unknown,
-		GameBoy,
-		CPM
-	};
-
 	Configuration();
 
 	bool isDebugMode() const {
@@ -68,18 +62,6 @@ public:
 		return m_romDirectory;
 	}
 
-	MachineMode getMachineMode() const {
-		return m_machineMode;
-	}
-
-	void setMachineMode(MachineMode value) {
-		m_machineMode = value;
-	}
-
-	uint16_t getStartAddress() const {
-		return getMachineMode() == CPM ? 0x100 : 0x100;
-	}
-
 private:
 	bool m_debugMode;
 	bool m_profileMode;
@@ -90,6 +72,4 @@ private:
 	int m_cyclesPerSecond;
 
 	std::string m_romDirectory;
-
-	MachineMode m_machineMode;
 };

@@ -74,7 +74,7 @@ void LR35902::jrConditional(int conditional) {
 	auto offset = (int8_t)fetchByteData();
 	if (conditional) {
 		setPcViaMemptr(pc + offset);
-		cycles += 5;
+		cycles++;
 	}
 }
 
@@ -96,7 +96,7 @@ void LR35902::jrConditionalFlag(int flag) {
 	case 5:	// PE
 	case 6:	// P
 	case 7:	// M
-		cycles -= 5;
+		cycles -= 2;
 		break;
 	}
 }
@@ -105,6 +105,7 @@ void LR35902::jumpConditional(int conditional) {
 	auto address = fetchWord();
 	if (conditional) {
 		pc = address;
+		cycles++;
 	}
 	MEMPTR().word = address;
 }
@@ -125,19 +126,19 @@ void LR35902::jumpConditionalFlag(int flag) {
 		break;
 	case 4:	// GB: LD (FF00 + C),A
 		m_memory.set(0xff00 + C(), A());
-		cycles -= 2; // Giving 8 cycles
+		cycles--; // Giving 8 cycles
 		break;
 	case 5:	// GB: LD (nn),A
 		m_memory.set(fetchWord(), A());
-		cycles += 6; // Giving 16 cycles
+		cycles++; // Giving 16 cycles
 		break;
 	case 6:	// GB: LD A,(FF00 + C)
 		A() = m_memory.get(0xff00 + C());
-		cycles -= 2; // 8 cycles
+		cycles--; // 8 cycles
 		break;
 	case 7:	// GB: LD A,(nn)
 		A() = m_memory.get(fetchWord());
-		cycles += 6; // Giving 16 cycles
+		cycles++; // Giving 16 cycles
 		break;
 	}
 }
@@ -154,7 +155,7 @@ void LR35902::reti() {
 void LR35902::returnConditional(int condition) {
 	if (condition) {
 		ret();
-		cycles += 6;
+		cycles += 3;
 	}
 }
 
@@ -174,7 +175,7 @@ void LR35902::returnConditionalFlag(int flag) {
 		break;
 	case 4:	// GB: LD (FF00 + n),A
 		m_memory.set(0xff00 + fetchByte(), A());
-		cycles += 7; // giving 12 cycles in total
+		cycles++; // giving 12 cycles in total
 		break;
 	case 5: { // GB: ADD SP,dd
 			auto before = sp;
@@ -184,15 +185,15 @@ void LR35902::returnConditionalFlag(int flag) {
 			setFlag(CF, sp & Bit16);
 			adjustHalfCarryAdd(Memory::highByte(before), value, Memory::highByte(sp));
 		}
-		cycles += 11;	// 16 cycles
+		cycles += 2;	// 16 cycles
 		break;
 	case 6:	// GB: LD A,(FF00 + n)
 		A() = m_memory.get(0xff00 + fetchByte());
-		cycles += 7;	// 12 cycles
+		cycles++;	// 12 cycles
 		break;
 	case 7:	// GB: LD HL,SP + dd
 		HL().word = sp + (int8_t)fetchByte();
-		cycles += 7;	// 12 cycles
+		cycles++;	// 12 cycles
 		break;
 	}
 }
@@ -205,7 +206,7 @@ void LR35902::call(uint16_t address) {
 void LR35902::callConditional(uint16_t address, int condition) {
 	if (condition) {
 		call(address);
-		cycles += 7;
+		cycles += 3;
 	} else {
 		pc += 2;
 	}
@@ -230,7 +231,7 @@ void LR35902::callConditionalFlag(uint16_t address, int flag) {
 	case 5:
 	case 6:
 	case 7:
-		cycles -= 10; // removed from GB
+		cycles -= 3; // removed from GB
 		break;
 	}
 }
@@ -603,7 +604,7 @@ int LR35902::execute(uint8_t opcode) {
 	if (cycles == 0)
 		throw std::logic_error("Unhandled opcode");
 
-	return cycles;
+	return cycles * 4;
 }
 
 void LR35902::executeCB(int x, int y, int z, int p, int q) {
@@ -636,29 +637,29 @@ void LR35902::executeCB(int x, int y, int z, int p, int q) {
 			break;
 		}
 		adjustZero(R(z));
-		cycles += 8;
+		cycles += 2;
 		if (z == 6)
-			cycles += 7;
+			cycles += 2;
 		break;
 	case 1: { // BIT y, r[z]
 			auto operand = R(z);
 			bit(y, operand);
-			cycles += 8;
+			cycles += 2;
 			if (z == 6)
-				cycles += 4;
+				cycles += 2;
 		}
 		break;
 	case 2:	// RES y, r[z]
 		res(y, R(z));
-		cycles += 8;
+		cycles += 2;
 		if (z == 6)
-			cycles += 7;
+			cycles += 2;
 		break;
 	case 3:	// SET y, r[z]
 		set(y, R(z));
-		cycles += 8;
+		cycles += 2;
 		if (z == 6)
-			cycles += 7;
+			cycles += 2;
 		break;
 	}
 }
@@ -670,23 +671,23 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 		case 0:	// Relative jumps and assorted ops
 			switch (y) {
 			case 0:	// NOP
-				cycles += 4;
+				cycles++;
 				break;
 			case 1:	// GB: LD (nn),SP
 				m_memory.setWord(fetchWord(), sp);
-				cycles += 20;
+				cycles += 5;
 				break;
 			case 2:	// GB: STOP
 				stop();
-				cycles += 4;
+				cycles++;
 				break;
 			case 3:	// JR d
 				jrConditional(true);
-				cycles += 7;
+				cycles += 3;
 				break;
 			default:	// JR cc,d
 				jrConditionalFlag(y - 4);
-				cycles += 5;
+				cycles += 2;
 				break;
 			}
 			break;
@@ -694,11 +695,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			switch (q) {
 			case 0:	// LD rp,nn
 				RP(p) = fetchWord();
-				cycles += 10;
+				cycles += 3;
 				break;
 			case 1:	// ADD HL,rp
 				addViaMemptr(RP(HL_IDX), RP(p));
-				cycles += 11;
+				cycles += 2;
 				break;
 			}
 			break;
@@ -708,19 +709,19 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				switch (p) {
 				case 0:	// LD (BC),A
 					setViaMemptr(BC().word, A());
-					cycles += 7;
+					cycles += 2;
 					break;
 				case 1:	// LD (DE),A
 					setViaMemptr(DE().word, A());
-					cycles += 7;
+					cycles += 2;
 					break;
 				case 2:	// GB: LDI (HL),A
 					m_memory.set(HL().word++, A());
-					cycles += 8;
+					cycles += 2;
 					break;
 				case 3: // GB: LDD (HL),A
 					m_memory.set(HL().word--, A());
-					cycles += 8;
+					cycles += 2;
 					break;
 				}
 				break;
@@ -728,19 +729,19 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				switch (p) {
 				case 0:	// LD A,(BC)
 					A() = getViaMemptr(BC().word);
-					cycles += 7;
+					cycles += 2;
 					break;
 				case 1:	// LD A,(DE)
 					A() = getViaMemptr(DE().word);
-					cycles += 7;
+					cycles += 2;
 					break;
 				case 2:	// GB: LDI A,(HL)
 					A() = m_memory.get(HL().word++);
-					cycles += 8;
+					cycles += 2;
 					break;
 				case 3:	// GB: LDD A,(HL)
 					A() = m_memory.get(HL().word--);
-					cycles += 8;
+					cycles += 2;
 					break;
 				}
 				break;
@@ -755,24 +756,24 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				--RP(p);
 				break;
 			}
-			cycles += 6;
+			cycles += 2;
 			break;
 		case 4:	// 8-bit INC
 			postIncrement(++R(y));	// INC r
-			cycles += 4;
+			cycles++;
+			if (y == 6)
+				cycles += 2;
 			break;
 		case 5:	// 8-bit DEC
 			postDecrement(--R(y));	// DEC r
-			cycles += 4;
+			cycles++;
 			if (y == 6)
-				cycles += 7;
+				cycles += 2;
 			break;
 		case 6: { // 8-bit load immediate
 			auto& r = R(y);		// LD r,n
 			r = fetchByteData();
-			cycles += 7;
-			if (y == 6)
-				cycles += 3;
+			cycles += 2;
 			break;
 		} case 7:	// Assorted operations on accumulator/flags
 			switch (y) {
@@ -801,7 +802,7 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				ccf();
 				break;
 			}
-			cycles += 4;
+			cycles++;
 			break;
 		}
 		break;
@@ -811,9 +812,9 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 		} else {
 			R(y) = R(z);
 			if ((y == 6) || (z == 6))	// M operations
-				cycles += 3;
+				cycles++;
 		}
-		cycles += 4;
+		cycles++;
 		break;
 	case 2:	// Operate on accumulator and register/memory location
 		switch (y) {
@@ -842,52 +843,52 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			compare(R(z));
 			break;
 		}
-		cycles += 4;
+		cycles++;
 		if (z == 6)
-			cycles += 3;
+			cycles++;
 		break;
 	case 3:
 		switch (z) {
 		case 0:	// Conditional return
 			returnConditionalFlag(y);
-			cycles += 5;
+			cycles += 2;
 			break;
 		case 1:	// POP & various ops
 			switch (q) {
 			case 0:	// POP rp2[p]
 				RP2(p) = popWord();
-				cycles += 10;
+				cycles += 3;
 				break;
 			case 1:
 				switch (p) {
 				case 0:	// RET
 					ret();
-					cycles += 10;
+					cycles += 4;
 					break;
 				case 1:	// GB: RETI
 					reti();
-					cycles += 8;
+					cycles += 4;
 					break;
 				case 2:	// JP HL
 					pc = HL().word;
-					cycles += 4;
+					cycles += 1;
 					break;
 				case 3:	// LD SP,HL
 					sp = HL().word;
-					cycles += 4;
+					cycles += 2;
 					break;
 				}
 			}
 			break;
 		case 2:	// Conditional jump
 			jumpConditionalFlag(y);
-			cycles += 10;
+			cycles += 3;
 			break;
 		case 3:	// Assorted operations
 			switch (y) {
 			case 0:	// JP nn
 				setPcViaMemptr(fetchWord());
-				cycles += 10;
+				cycles += 4;
 				break;
 			case 1:	// CB prefix
 				m_prefixCB = true;
@@ -895,29 +896,29 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				break;
 			case 6:	// DI
 				di();
-				cycles += 4;
+				cycles++;
 				break;
 			case 7:	// EI
 				ei();
-				cycles += 4;
+				cycles++;
 				break;
 			}
 			break;
 		case 4:	// Conditional call: CALL cc[y], nn
 			callConditionalFlag(getWord(pc), y);
-			cycles += 10;
+			cycles += 3;
 			break;
 		case 5:	// PUSH & various ops
 			switch (q) {
 			case 0:	// PUSH rp2[p]
 				pushWord(RP2(p));
-				cycles += 11;
+				cycles += 4;
 				break;
 			case 1:
 				switch (p) {
 				case 0:	// CALL nn
 					callConditional(getWord(pc), true);
-					cycles += 17;
+					cycles += 3;
 					break;
 				}
 			}
@@ -949,11 +950,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				compare(fetchByteData());
 				break;
 			}
-			cycles += 7;
+			cycles += 2;
 			break;
 		case 7:	// Restart: RST y * 8
 			restart(y << 3);
-			cycles += 11;
+			cycles += 4;
 			break;
 		}
 		break;

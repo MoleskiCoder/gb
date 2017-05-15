@@ -8,6 +8,5 @@ Configuration::Configuration()
 	m_vsyncLocked(true),
 	m_framesPerSecond(60),
 	m_cyclesPerSecond(4194304),
-	m_romDirectory("roms"),
-	m_machineMode(GameBoy) {
+	m_romDirectory("roms") {
 }
