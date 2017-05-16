@@ -46,7 +46,7 @@ int LR35902::interrupt(uint8_t value) {
 	di();
 	M1() = false;
 	restart(value);
-	return 32;
+	return 4;
 }
 
 void LR35902::adjustZero(uint8_t value) {
