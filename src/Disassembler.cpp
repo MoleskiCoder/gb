@@ -198,6 +198,46 @@ void Disassembler::disassembleCB(
 	int& dumpCount,
 	int x, int y, int z,
 	int p, int q) {
+
+	switch (x) {
+	case 0:	// rot[y] r[z]
+		switch (y) {
+		case 0:
+			specification = "RLC " + R(y);
+			break;
+		case 1:
+			specification = "RRC " + R(y);
+			break;
+		case 2:
+			specification = "RL " + R(y);
+			break;
+		case 3:
+			specification = "RR " + R(y);
+			break;
+		case 4:
+			specification = "SLA " + R(y);
+			break;
+		case 5:
+			specification = "SRA " + R(y);
+			break;
+		case 6:
+			specification = "SWAP " + R(y);
+			break;
+		case 7:
+			specification = "SRL " + R(y);
+			break;
+		}
+		break;
+	case 1: // BIT y, r[z]
+		specification = "BIT " + decimal(y) + "," + R(y);
+		break;
+	case 2:	// RES y, r[z]
+		specification = "RES " + decimal(y) + "," + R(y);
+		break;
+	case 3:	// SET y, r[z]
+		specification = "SET " + decimal(y) + "," + R(y);
+		break;
+	}
 }
 
 void Disassembler::disassembleOther(
@@ -426,18 +466,6 @@ void Disassembler::disassembleOther(
 				m_prefixCB = true;
 				disassemble(output, cpu, pc + 1);
 				break;
-			case 2:	// OUT (n),A
-				specification = "OUT (%1$02XH),A";
-				dumpCount++;
-				break;
-			case 3:	// IN A,(n)
-				break;
-			case 4:	// EX (SP),HL
-				specification = "EX (SP),HL";
-				break;
-			case 5:	// EX DE,HL
-				specification = "EX DE,HL";
-				break;
 			case 6:	// DI
 				specification = "DI";
 				break;
@@ -469,6 +497,7 @@ void Disassembler::disassembleOther(
 			dumpCount++;
 			break;
 		case 7:	// Restart: RST y * 8
+			specification = "RST " + hex((uint8_t)(y * 8)) + "H";
 			break;
 		}
 		break;
@@ -510,6 +539,12 @@ std::string Disassembler::hex(uint16_t value) {
 std::string Disassembler::binary(uint8_t value) {
 	std::ostringstream output;
 	output << std::bitset<8>(value);
+	return output.str();
+}
+
+std::string Disassembler::decimal(uint8_t value) {
+	std::ostringstream output;
+	output << (int)value;
 	return output.str();
 }
 
