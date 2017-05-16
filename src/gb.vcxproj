@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="Board.h" />
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="CharacterDefinition.h" />
     <ClInclude Include="ColourPalette.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Disassembler.h" />
