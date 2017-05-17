@@ -90,12 +90,11 @@ void Computer::configureBackground() const {
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Board::BufferWidth, Board::BufferHeight);
+	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Board::RasterWidth, Board::RasterHeight);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
 	m_displayPixels.resize(Board::RasterWidth * Board::RasterHeight);
-	m_bufferPixels.resize(Board::BufferWidth * Board::BufferHeight);
 }
 
 void Computer::runLoop() {
@@ -169,8 +168,18 @@ void Computer::drawFrame() {
 		auto scrollX = m_board.BUS().REG(Bus::SCX);
 		auto scrollY = m_board.BUS().REG(Bus::SCY);
 
+		auto paletteRaw = m_board.BUS().REG(Bus::BGP);
+		std::array<int, 4> palette;
+		palette[0] = paletteRaw & 0b11;
+		palette[1] = (paletteRaw & 0b1100) >> 2;
+		palette[2] = (paletteRaw & 0b110000) >> 4;
+		palette[3] = (paletteRaw & 0b11000000) >> 6;
+
 		auto wx = m_board.BUS().REG(Bus::WX);
 		auto wy = m_board.BUS().REG(Bus::WY);
+
+		auto offsetX = window ? wx - 7 : 0;
+		auto offsetY = window ? wy : 0;
 
 		std::map<int, CharacterDefinition> definitions;
 		
@@ -192,20 +201,25 @@ void Computer::drawFrame() {
 				for (int cy = 0; cy < 8; ++cy) {
 					for (int cx = 0; cx < 8; ++cx) {
 
-						auto x = column * 8 + cx;
-						auto y = row * 8 + cy;
+						uint8_t x = column * 8 + cx + offsetX - scrollX;
+						if (x >= Board::RasterWidth)
+							break;
 
-						auto outputPixel = y * Board::BufferWidth + x;
+						uint8_t y = row * 8 + cy + offsetY - scrollY;
+						if (y >= Board::RasterHeight)
+							break;
 
-						auto colour = definition.get()[cy * 8 + cx];
-						m_bufferPixels[outputPixel] = m_colours.getColour(colour);
+						auto outputPixel = y * Board::RasterWidth + x;
+
+						auto colour = palette[definition.get()[cy * 8 + cx]];
+						m_displayPixels[outputPixel] = m_colours.getColour(colour);
 					}
 				}
 			}
 		}
 	}
 
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_bufferPixels[0], Board::BufferWidth * sizeof(Uint32)), "Unable to update texture: ");
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_displayPixels[0], Board::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 

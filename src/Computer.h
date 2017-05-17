@@ -45,7 +45,6 @@ private:
 	SDL_PixelFormat* m_pixelFormat;
 
 	std::vector<uint32_t> m_displayPixels;
-	std::vector<uint32_t> m_bufferPixels;
 
 	int m_fps;
 	Uint32 m_startTicks;
@@ -58,11 +57,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return Board::BufferWidth * DisplayScale;
+		return Board::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return Board::BufferHeight * DisplayScale;
+		return Board::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);
