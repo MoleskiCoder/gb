@@ -7,6 +7,7 @@
 
 #include "Board.h"
 #include "ColourPalette.h"
+#include "Display.h"
 
 class Configuration;
 
@@ -44,7 +45,7 @@ private:
 	Uint32 m_pixelType;
 	SDL_PixelFormat* m_pixelFormat;
 
-	std::vector<uint32_t> m_displayPixels;
+	Display m_lcd;
 
 	int m_fps;
 	Uint32 m_startTicks;
@@ -57,11 +58,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return Board::RasterWidth * DisplayScale;
+		return Display::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return Board::RasterHeight * DisplayScale;
+		return Display::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);

@@ -9,18 +9,10 @@
 #include "Profiler.h"
 #include "Disassembler.h"
 #include "Signal.h"
+#include "Display.h"
 
 class Board {
 public:
-	enum {
-		BufferWidth = 256,
-		BufferHeight = 256,
-		BufferCharacterWidth = BufferWidth / 8,
-		BufferCharacterHeight = BufferHeight / 8,
-		RasterWidth = 160,
-		RasterHeight = 144,
-	};
-
 	Board(const Configuration& configuration);
 
 	Signal<Board> DrawingLine;
@@ -42,14 +34,14 @@ public:
 	int runRasterLines() {
 		BUS().resetLY();
 		int cycles = 0;
-		for (int line = 0; line < Board::RasterHeight; ++line)
+		for (int line = 0; line < Display::RasterHeight; ++line)
 			cycles += runHorizontalLine();
 		return cycles;
 	}
 
 	int runVerticalBlankLines() {
 		int cycles = generateInterrupt(0x40);	// VBLANK
-		for (int line = 0; line < (Bus::TotalLineCount - RasterHeight); ++line)
+		for (int line = 0; line < (Bus::TotalLineCount - Display::RasterHeight); ++line)
 			cycles += runHorizontalLine();
 		return cycles;
 	}

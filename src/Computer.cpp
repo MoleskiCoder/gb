@@ -15,7 +15,8 @@ Computer::Computer(const Configuration& configuration)
 	m_fps(configuration.getFramesPerSecond()),
 	m_startTicks(0),
 	m_frames(0),
-	m_vsync(false) {
+	m_vsync(false),
+	m_lcd(m_colours, m_board.BUS()) {
 }
 
 void Computer::initialise() {
@@ -90,11 +91,11 @@ void Computer::configureBackground() const {
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Board::RasterWidth, Board::RasterHeight);
+	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Display::RasterWidth, Display::RasterHeight);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
-	m_displayPixels.resize(Board::RasterWidth * Board::RasterHeight);
+	m_lcd.initialise();
 }
 
 void Computer::runLoop() {
@@ -153,74 +154,9 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 
 void Computer::drawFrame() {
 	
-	auto control = m_board.BUS().REG(Bus::LCDC);
-	auto on = control & Processor::Bit7;
-	if (on) {
+	m_lcd.render();
 
-		auto windowArea = (control & Processor::Bit6) ? 0x9c00 : 0x9800;
-		auto window = (control & Processor::Bit5) != 0;
-		auto bgCharacters = (control & Processor::Bit4) ? 0x8000 : 0x8800;
-		auto bgArea = (control & Processor::Bit3) ? 0x9c00 : 0x9800;
-		auto objBlockHeight = (control & Processor::Bit2) ? 16 : 8;
-		auto objDisplay = (control & Processor::Bit1) != 0;
-		auto bgDisplay = (control & Processor::Bit0) != 0;
-
-		auto scrollX = m_board.BUS().REG(Bus::SCX);
-		auto scrollY = m_board.BUS().REG(Bus::SCY);
-
-		auto paletteRaw = m_board.BUS().REG(Bus::BGP);
-		std::array<int, 4> palette;
-		palette[0] = paletteRaw & 0b11;
-		palette[1] = (paletteRaw & 0b1100) >> 2;
-		palette[2] = (paletteRaw & 0b110000) >> 4;
-		palette[3] = (paletteRaw & 0b11000000) >> 6;
-
-		auto wx = m_board.BUS().REG(Bus::WX);
-		auto wy = m_board.BUS().REG(Bus::WY);
-
-		auto offsetX = window ? wx - 7 : 0;
-		auto offsetY = window ? wy : 0;
-
-		std::map<int, CharacterDefinition> definitions;
-		
-		for (int row = 0; row < Board::BufferCharacterHeight; ++row) {
-			for (int column = 0; column < Board::BufferCharacterWidth; ++column) {
-
-				auto address = bgArea + row * Board::BufferCharacterWidth + column;
-				auto character = m_board.BUS().peek(address);
-
-				auto definitionPair = definitions.find(character);
-
-				if (definitionPair == definitions.end()) {
-					definitions[character] = CharacterDefinition(m_board.BUS(), bgCharacters + 16 * character);
-					definitionPair = definitions.find(character);
-				}
-
-				auto definition = definitionPair->second;
-
-				for (int cy = 0; cy < 8; ++cy) {
-					for (int cx = 0; cx < 8; ++cx) {
-
-						uint8_t x = column * 8 + cx + offsetX - scrollX;
-						if (x >= Board::RasterWidth)
-							break;
-
-						uint8_t y = row * 8 + cy + offsetY - scrollY;
-						if (y >= Board::RasterHeight)
-							break;
-
-						auto outputPixel = y * Board::RasterWidth + x;
-
-						auto colour = palette[definition.get()[cy * 8 + cx]];
-						m_displayPixels[outputPixel] = m_colours.getColour(colour);
-					}
-				}
-			}
-		}
-	}
-
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &m_displayPixels[0], Board::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
-
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 
 		"Unable to copy texture to renderer");
