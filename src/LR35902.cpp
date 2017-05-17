@@ -345,7 +345,7 @@ uint8_t LR35902::add(uint8_t value) {
 
 	uint16_t result = A() + value;
 
-	clearFlag(ZF, result);
+	adjustZero(result);
 	adjustHalfCarryAdd(A(), value, result);
 
 	clearFlag(NF);
