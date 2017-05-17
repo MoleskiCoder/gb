@@ -14,7 +14,7 @@ public:
 
 		for (auto row = 0; row < 8; ++row) {
 
-			auto planeAddress = address + row;
+			auto planeAddress = address + row * 2;
 
 			auto planeLow = bus.peek(planeAddress);
 			auto planeHigh = bus.peek(planeAddress + 1);
