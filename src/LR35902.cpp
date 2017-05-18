@@ -191,8 +191,15 @@ void LR35902::returnConditionalFlag(int flag) {
 		A() = m_memory.get(0xff00 + fetchByte());
 		cycles++;	// 12 cycles
 		break;
-	case 7:	// GB: LD HL,SP + dd
-		HL().word = sp + (int8_t)fetchByte();
+	case 7: { // GB: LD HL,SP + dd
+			auto before = sp;
+			auto value = fetchByte();
+			uint16_t result = before + (int8_t)value;
+			HL().word = result;
+			clearFlag(ZF | NF);
+			setFlag(CF, result & Bit16);
+			adjustHalfCarryAdd(Memory::highByte(before), value, Memory::highByte(result));
+		}
 		cycles++;	// 12 cycles
 		break;
 	}
