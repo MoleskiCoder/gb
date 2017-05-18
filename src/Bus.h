@@ -96,7 +96,7 @@ public:
 
 	virtual uint8_t peek(uint16_t address) const;
 
-	virtual uint8_t& reference();
+	virtual uint8_t& reference(uint16_t address);
 
 private:
 	std::array<uint8_t, 0x100> m_boot;

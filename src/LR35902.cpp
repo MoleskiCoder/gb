@@ -4,13 +4,10 @@
 // based on http://www.z80.info/decoding.htm
 // Half carry flag help from https://github.com/oubiwann/z80
 
-LR35902::LR35902(Memory& memory, InputOutput& ports)
-: Processor(memory, ports),
-  m_refresh(0xff),
+LR35902::LR35902(Bus& memory)
+: Processor(memory),
   m_ime(false),
-  m1(false),
   m_prefixCB(false) {
-	m_memptr.word = 0;
 }
 
 void LR35902::reset() {
@@ -28,9 +25,6 @@ void LR35902::initialise() {
 	DE().word = 0xffff;
 	HL().word = 0xffff;
 
-	REFRESH() = 0xff;
-	MEMPTR().word = 0;
-
 	m_prefixCB = false;
 }
 
@@ -44,7 +38,6 @@ void LR35902::ei() {
 
 int LR35902::interrupt(uint8_t value) {
 	di();
-	M1() = false;
 	restart(value);
 	return 4;
 }
@@ -67,13 +60,13 @@ void LR35902::postDecrement(uint8_t value) {
 
 void LR35902::restart(uint8_t address) {
 	pushWord(pc);
-	setPcViaMemptr(address);
+	pc = address;
 }
 
 void LR35902::jrConditional(int conditional) {
-	auto offset = (int8_t)fetchByteData();
+	auto offset = (int8_t)fetchByte();
 	if (conditional) {
-		setPcViaMemptr(pc + offset);
+		pc += offset;
 		cycles++;
 	}
 }
@@ -107,7 +100,6 @@ void LR35902::jumpConditional(int conditional) {
 		pc = address;
 		cycles++;
 	}
-	MEMPTR().word = address;
 }
 
 void LR35902::jumpConditionalFlag(int flag) {
@@ -144,7 +136,7 @@ void LR35902::jumpConditionalFlag(int flag) {
 }
 
 void LR35902::ret() {
-	setPcViaMemptr(popWord());
+	pc = popWord();
 }
 
 void LR35902::reti() {
@@ -217,7 +209,6 @@ void LR35902::callConditional(uint16_t address, int condition) {
 	} else {
 		pc += 2;
 	}
-	MEMPTR().word = address;
 }
 
 void LR35902::callConditionalFlag(uint16_t address, int flag) {
@@ -558,7 +549,6 @@ void LR35902::rrd() {
 	m_memory.set(HL().word, updated);
 	adjustZero(A());
 	clearFlag(NF | HC);
-	MEMPTR().word = HL().word + 1;
 }
 
 void LR35902::rld() {
@@ -569,15 +559,6 @@ void LR35902::rld() {
 	m_memory.set(HL().word, updated);
 	adjustZero(A());
 	clearFlag(NF | HC);
-	MEMPTR().word = HL().word + 1;
-}
-
-void LR35902::readPort(uint8_t& operand, uint8_t port) {
-	auto bc = BC().word;
-	operand = m_ports.read(port);
-	adjustZero(operand);
-	clearFlag(HC | NF);
-	MEMPTR().word = bc + 1;
 }
 
 int LR35902::step() {
@@ -588,9 +569,6 @@ int LR35902::step() {
 
 int LR35902::execute(uint8_t opcode) {
 
-	if (!getM1())
-		throw std::logic_error("M1 cannot be high");
-
 	auto x = (opcode & 0b11000000) >> 6;
 	auto y = (opcode & 0b111000) >> 3;
 	auto z = (opcode & 0b111);
@@ -599,9 +577,6 @@ int LR35902::execute(uint8_t opcode) {
 	auto q = (y & 1);
 
 	cycles = 0;
-
-	incrementRefresh();
-	M1() = false;
 
 	if (m_prefixCB)
 		executeCB(x, y, z, p, q);
@@ -705,7 +680,7 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 				cycles += 3;
 				break;
 			case 1:	// ADD HL,rp
-				addViaMemptr(RP(HL_IDX), RP(p));
+				RP(HL_IDX) = add(RP(p));
 				cycles += 2;
 				break;
 			}
@@ -715,11 +690,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			case 0:
 				switch (p) {
 				case 0:	// LD (BC),A
-					setViaMemptr(BC().word, A());
+					m_memory.set(BC().word, A());
 					cycles += 2;
 					break;
 				case 1:	// LD (DE),A
-					setViaMemptr(DE().word, A());
+					m_memory.set(DE().word, A());
 					cycles += 2;
 					break;
 				case 2:	// GB: LDI (HL),A
@@ -735,11 +710,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			case 1:
 				switch (p) {
 				case 0:	// LD A,(BC)
-					A() = getViaMemptr(BC().word);
+					A() = m_memory.get(BC().word);
 					cycles += 2;
 					break;
 				case 1:	// LD A,(DE)
-					A() = getViaMemptr(DE().word);
+					A() = m_memory.get(DE().word);
 					cycles += 2;
 					break;
 				case 2:	// GB: LDI A,(HL)
@@ -779,7 +754,7 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			break;
 		case 6: { // 8-bit load immediate
 			auto& r = R(y);		// LD r,n
-			r = fetchByteData();
+			r = fetchByte();
 			cycles += 2;
 			break;
 		} case 7:	// Assorted operations on accumulator/flags
@@ -894,7 +869,7 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 		case 3:	// Assorted operations
 			switch (y) {
 			case 0:	// JP nn
-				setPcViaMemptr(fetchWord());
+				pc = fetchWord();
 				cycles += 4;
 				break;
 			case 1:	// CB prefix
@@ -933,28 +908,28 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 		case 6:	// Operate on accumulator and immediate operand: alu[y] n
 			switch (y) {
 			case 0:	// ADD A,n
-				A() = add(fetchByteData());
+				A() = add(fetchByte());
 				break;
 			case 1:	// ADC A,n
-				A() = adc(fetchByteData());
+				A() = adc(fetchByte());
 				break;
 			case 2:	// SUB n
-				A() = sub(fetchByteData());
+				A() = sub(fetchByte());
 				break;
 			case 3:	// SBC A,n
-				A() = sbc(fetchByteData());
+				A() = sbc(fetchByte());
 				break;
 			case 4:	// AND n
-				anda(fetchByteData());
+				anda(fetchByte());
 				break;
 			case 5:	// XOR n
-				xora(fetchByteData());
+				xora(fetchByte());
 				break;
 			case 6:	// OR n
-				ora(fetchByteData());
+				ora(fetchByte());
 				break;
 			case 7:	// CP n
-				compare(fetchByteData());
+				compare(fetchByte());
 				break;
 			}
 			cycles += 2;

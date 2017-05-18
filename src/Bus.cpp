@@ -17,11 +17,11 @@ void Bus::loadBootRom(const std::string& path) {
 	std::copy_n(m_bus.cbegin(), size, m_boot.begin());
 }
 
-uint8_t& Bus::reference() {
-	auto address = effectiveAddress(ADDRESS());
-	if (isBootRom(address))
-		return placeDATA(m_boot[address]);
-	return Memory::reference();
+uint8_t& Bus::reference(uint16_t address) {
+	auto effective = effectiveAddress(address);
+	if (isBootRom(effective))
+		return placeDATA(m_boot[effective]);
+	return Memory::reference(effective);
 }
 
 uint8_t Bus::peek(uint16_t address) const {

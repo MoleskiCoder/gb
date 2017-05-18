@@ -152,11 +152,9 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="EventArgs.h" />
     <ClInclude Include="Computer.h" />
-    <ClInclude Include="InputOutput.h" />
     <ClInclude Include="Processor.h" />
     <ClInclude Include="LR35902.h" />
     <ClInclude Include="Memory.h" />
-    <ClInclude Include="PortEventArgs.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="Signal.h" />
     <ClInclude Include="StatusFlags.h" />
@@ -170,7 +168,6 @@
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="Display.cpp" />
-    <ClCompile Include="InputOutput.cpp" />
     <ClCompile Include="Processor.cpp" />
     <ClCompile Include="LR35902.cpp" />
     <ClCompile Include="Memory.cpp" />

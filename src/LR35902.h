@@ -13,7 +13,7 @@ public:
 		CF = Bit4,
 	};
 
-	LR35902(Memory& memory, InputOutput& ports);
+	LR35902(Bus& memory);
 
 	Signal<LR35902> ExecutingInstruction;
 
@@ -31,21 +31,7 @@ public:
 	int execute(uint8_t opcode);
 	int step();
 
-	bool getM1() const { return m1; }
-
-	virtual uint16_t getWord(uint16_t address) const {
-		if (getM1())
-			throw std::logic_error("M1 cannot be low");
-		return Processor::getWord(address);
-	}
-
 	// Mutable access to processor!!
-
-	virtual void setWord(uint16_t address, uint16_t value) {
-		if (getM1())
-			throw std::logic_error("M1 cannot be low");
-		Processor::setWord(address, value);
-	}
 
 	register16_t& AF() {
 		m_accumulatorFlag.low &= 0xf0;
@@ -76,12 +62,6 @@ public:
 	uint8_t& H() { return HL().high; }
 	uint8_t& L() { return HL().low; }
 
-	uint8_t& REFRESH() { return m_refresh; }
-
-	register16_t& MEMPTR() { return m_memptr; }
-
-	bool& M1() { return m1; }
-
 	virtual void reset();
 	virtual void initialise();
 
@@ -91,12 +71,7 @@ private:
 	std::array<register16_t, 3> m_registers;
 	register16_t m_accumulatorFlag;
 
-	uint8_t m_refresh;
 	bool m_ime;
-
-	register16_t m_memptr;
-
-	bool m1;
 
 	bool m_prefixCB;
 
@@ -106,25 +81,7 @@ private:
 	std::array<bool, 8> m_halfCarryTableSub = { { false, true, true, true, false, false, false, true } };
 
 	int fetchExecute() {
-		M1() = true;
-		return execute(fetchByteExecute());
-	}
-
-	uint8_t fetchByteExecute() {
-		if (!getM1())
-			throw std::logic_error("M1 cannot be high");
-		return fetchByte();
-	}
-
-	uint8_t fetchByteData() {
-		if (getM1())
-			throw std::logic_error("M1 cannot be low");
-		return fetchByte();
-	}
-
-	void incrementRefresh() {
-		auto incremented = ((REFRESH() & Mask7) + 1) & Mask7;
-		REFRESH() = (REFRESH() & Bit7) | incremented;
+		return execute(fetchByte());
 	}
 
 	void clearFlag(int flag) { F() &= ~flag; }
@@ -176,46 +133,6 @@ private:
 		default:
 			return m_registers[rp].word;
 		}
-	}
-
-	uint8_t getViaMemptr(uint16_t address) {
-		MEMPTR().word = address + 1;
-		return m_memory.get(address);
-	}
-
-	void setViaMemptr(uint16_t address, uint8_t value) {
-		m_memory.set(address, value);
-		MEMPTR().low = Memory::lowByte(++address);
-		MEMPTR().high = value;
-	}
-
-	uint16_t getWordViaMemptr(uint16_t address) {
-		MEMPTR().word = address + 1;
-		return getWord(address);
-	}
-
-	void setWordViaMemptr(uint16_t address, uint16_t value) {
-		setWord(address, value);
-		MEMPTR().word = ++address;
-	}
-
-	void setPcViaMemptr(uint16_t address) {
-		MEMPTR().word = pc = address;
-	}
-
-	void addViaMemptr(uint16_t& hl, uint16_t operand) {
-		MEMPTR().word = hl + 1;
-		hl = add(operand);
-	}
-
-	void sbcViaMemptr(uint16_t& hl, uint16_t operand) {
-		MEMPTR().word = hl + 1;
-		hl = sbc(operand);
-	}
-
-	void adcViaMemptr(uint16_t& hl, uint16_t operand) {
-		MEMPTR().word = hl + 1;
-		hl = adc(operand);
 	}
 
 	int buildHalfCarryIndex(uint8_t before, uint8_t value, int calculation) {
@@ -305,6 +222,4 @@ private:
 
 	void rrd();
 	void rld();
-
-	void readPort(uint8_t& operand, uint8_t port);
 };

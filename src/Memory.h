@@ -11,7 +11,6 @@ public:
 
 	Memory(uint16_t addressMask);
 
-	virtual uint16_t& ADDRESS() { return m_address; }
 	virtual uint8_t& DATA() { return *m_data; }
 
 	virtual uint8_t& placeDATA(uint8_t value);
@@ -30,7 +29,6 @@ public:
 		return address & m_addressMask;
 	}
 
-	virtual uint8_t& reference();
 	virtual uint8_t& reference(uint16_t address);
 
 	void clear();
@@ -43,7 +41,6 @@ protected:
 
 	uint16_t m_addressMask;		// Mirror
 	uint8_t m_temporary;	// Used to simulate ROM
-	uint16_t m_address;
 	uint8_t* m_data;
 
 	int loadMemory(const std::string& path, uint16_t offset);

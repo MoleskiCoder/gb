@@ -7,9 +7,8 @@
 #include <algorithm>
 
 Memory::Memory(uint16_t addressMask)
-: m_address(0),
-  m_addressMask(addressMask),
-  m_data(&(m_bus[m_address])) {}
+: m_addressMask(addressMask),
+  m_data(&(m_bus[0])) {}
 
 uint8_t Memory::peek(uint16_t address) const {
 	return m_bus[address];
@@ -22,8 +21,7 @@ uint16_t Memory::peekWord(uint16_t address) const {
 }
 
 uint8_t Memory::get(uint16_t address) {
-	ADDRESS() = address;
-	return reference();
+	return reference(address);
 }
 
 uint16_t Memory::getWord(uint16_t address) {
@@ -33,8 +31,7 @@ uint16_t Memory::getWord(uint16_t address) {
 }
 
 void Memory::set(uint16_t address, uint8_t value) {
-	ADDRESS() = address;
-	reference() = value;
+	reference(address) = value;
 }
 
 void Memory::setWord(uint16_t address, uint16_t value) {
@@ -42,8 +39,8 @@ void Memory::setWord(uint16_t address, uint16_t value) {
 	set(address + 1, highByte(value));
 }
 
-uint8_t& Memory::reference() {
-	uint16_t effective = effectiveAddress(ADDRESS());
+uint8_t& Memory::reference(uint16_t address) {
+	uint16_t effective = effectiveAddress(address);
 	return m_locked[effective] ? placeDATA(m_bus[effective]) : referenceDATA(m_bus[effective]);
 }
 
@@ -56,11 +53,6 @@ uint8_t& Memory::placeDATA(uint8_t value) {
 uint8_t& Memory::referenceDATA(uint8_t& value) {
 	m_data = &value;
 	return DATA();
-}
-
-uint8_t& Memory::reference(uint16_t address) {
-	ADDRESS() = address;
-	return reference();
 }
 
 void Memory::clear() {

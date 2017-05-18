@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "Processor.h"
 
-Processor::Processor(Memory& memory, InputOutput& ports)
+Processor::Processor(Bus& memory)
 :	m_memory(memory),
-	m_ports(ports),
 	cycles(0),
 	pc(0),
 	sp(0xffff),

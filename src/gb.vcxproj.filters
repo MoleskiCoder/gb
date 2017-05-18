@@ -29,13 +29,7 @@
     <ClInclude Include="EventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InputOutput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Memory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PortEventArgs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Profiler.h">
@@ -80,9 +74,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Disassembler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InputOutput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Memory.cpp">

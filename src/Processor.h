@@ -4,8 +4,7 @@
 #include <array>
 #include <functional>
 
-#include "Memory.h"
-#include "InputOutput.h"
+#include "Bus.h"
 #include "Signal.h"
 
 class Processor {
@@ -65,7 +64,7 @@ public:
 		uint16_t word;
 	} register16_t;
 
-	Processor(Memory& memory, InputOutput& ports);
+	Processor(Bus& memory);
 
 	const Memory& getMemory() const { return m_memory; }
 
@@ -91,8 +90,7 @@ public:
 	}
 
 protected:
-	Memory& m_memory;
-	InputOutput& m_ports;
+	Bus& m_memory;
 
 	int cycles;
 

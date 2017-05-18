@@ -3,7 +3,6 @@
 #include <string>
 
 #include "Bus.h"
-#include "InputOutput.h"
 #include "Configuration.h"
 #include "LR35902.h"
 #include "Profiler.h"
@@ -98,7 +97,6 @@ public:
 
 private:
 	const Configuration& m_configuration;
-	InputOutput m_ports;
 	LR35902 m_cpu;
 	Bus m_bus;
 	bool m_power;
