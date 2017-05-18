@@ -48,6 +48,7 @@ public:
 	}
 
 	register16_t& AF() {
+		m_accumulatorFlag.low &= 0xf0;
 		return m_accumulatorFlag;
 	}
 
