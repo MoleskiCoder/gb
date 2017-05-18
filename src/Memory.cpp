@@ -70,7 +70,7 @@ void Memory::clear() {
 
 void Memory::loadRom(const std::string& path, uint16_t offset) {
 	auto size = loadMemory(path, offset);
-	std::fill(m_locked.begin() + offset, m_locked.begin() + offset + size, true);
+	std::fill(m_locked.begin() + offset, m_locked.begin() + offset + (size & 0x7000), true);
 }
 
 void Memory::loadRam(const std::string& path, uint16_t offset) {
