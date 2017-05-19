@@ -1,20 +1,21 @@
 #include "stdafx.h"
 #include "Profiler.h"
-#include "Disassembler.h"
+#include "LR35902.h"
 
-Profiler::Profiler() {
+Profiler::Profiler(LR35902& cpu)
+: m_cpu(cpu) {
 	std::fill(m_instructions.begin(), m_instructions.end(), 0);
 	std::fill(m_addresses.begin(), m_addresses.end(), 0);
 }
 
-Profiler::~Profiler() {
-}
+void Profiler::add(uint16_t address, uint8_t instruction) {
 
-void Profiler::addInstruction(uint8_t instruction) {
 	m_instructions[instruction]++;
-}
 
-void Profiler::addAddress(uint16_t address) {
+	auto old = m_addresses[address];
+	if (old == 0)
+		std::cout << Disassembler::hex(address) << "\t" << m_disassembler.disassemble(m_cpu) << "\n";
+
 	m_addresses[address]++;
 }
 

@@ -4,7 +4,8 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_cpu(LR35902(m_bus)),
-  m_power(false) {
+  m_power(false),
+  m_profiler(m_cpu) {
 }
 
 void Board::initialise() {
@@ -50,11 +51,8 @@ void Board::initialise() {
 }
 
 void Board::Cpu_ExecutingInstruction_Profile(const LR35902& cpu) {
-
 	const auto pc = cpu.getProgramCounter();
-
-	m_profiler.addAddress(pc);
-	m_profiler.addInstruction(BUS().peek(pc));
+	m_profiler.add(pc, BUS().peek(pc));
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(LR35902& cpu) {
