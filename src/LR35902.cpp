@@ -247,7 +247,7 @@ uint16_t LR35902::sbc(uint16_t value) {
 		--result;
 	auto highResult = Memory::highByte(result);
 
-	clearFlag(ZF, result);
+	adjustZero(result);
 	adjustHalfCarrySub(high, highValue, highResult);
 
 	setFlag(NF);
@@ -269,7 +269,7 @@ uint16_t LR35902::adc(uint16_t value) {
 		++result;
 	auto highResult = Memory::highByte(result);
 
-	clearFlag(ZF, result);
+	adjustZero(result);
 	adjustHalfCarryAdd(high, highValue, highResult);
 
 	clearFlag(NF);
@@ -302,7 +302,7 @@ uint8_t LR35902::sbc(uint8_t value) {
 	if (F() & CF)
 		--result;
 
-	clearFlag(ZF, result);
+	adjustZero((uint8_t)result);
 	adjustHalfCarrySub(A(), value, result);
 
 	setFlag(NF);
@@ -315,7 +315,7 @@ uint8_t LR35902::sub(uint8_t value) {
 
 	uint16_t result = A() - value;
 
-	clearFlag(ZF, result);
+	adjustZero((uint8_t)result);
 	adjustHalfCarrySub(A(), value, result);
 
 	setFlag(NF);
@@ -330,7 +330,7 @@ uint8_t LR35902::adc(uint8_t value) {
 	if (F() & CF)
 		++result;
 
-	clearFlag(ZF, result);
+	adjustZero((uint8_t)result);
 	adjustHalfCarryAdd(A(), value, result);
 
 	clearFlag(NF);
@@ -389,6 +389,7 @@ void LR35902::rlc(uint8_t& operand) {
 	setFlag(CF, carry);
 	carry ? operand |= Bit0 : operand &= ~Bit0;
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 void LR35902::rrc(uint8_t& operand) {
@@ -397,6 +398,7 @@ void LR35902::rrc(uint8_t& operand) {
 	carry ? operand |= Bit7 : operand &= ~Bit7;
 	setFlag(CF, carry);
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 void LR35902::rl(uint8_t& operand) {
@@ -406,6 +408,7 @@ void LR35902::rl(uint8_t& operand) {
 	oldCarry ? operand |= Bit0 : operand &= ~Bit0;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 void LR35902::rr(uint8_t& operand) {
@@ -415,6 +418,7 @@ void LR35902::rr(uint8_t& operand) {
 	operand |= oldCarry << 7;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 //
@@ -424,6 +428,7 @@ void LR35902::sla(uint8_t& operand) {
 	operand <<= 1;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 void LR35902::sra(uint8_t& operand) {
@@ -433,6 +438,7 @@ void LR35902::sra(uint8_t& operand) {
 	operand |= new7;
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
+	adjustZero(operand);
 }
 
 void LR35902::srl(uint8_t& operand) {
@@ -441,7 +447,7 @@ void LR35902::srl(uint8_t& operand) {
 	operand &= ~Bit7;	// clear bit 7
 	setFlag(CF, newCarry);
 	clearFlag(NF | HC);
-	setFlag(ZF, operand);
+	adjustZero(operand);
 }
 
 //
@@ -521,9 +527,8 @@ void LR35902::scf() {
 
 void LR35902::ccf() {
 	auto carry = F() & CF;
-	setFlag(HC, carry);
 	clearFlag(CF, carry);
-	clearFlag(NF);
+	clearFlag(NF | HC);
 }
 
 void LR35902::swap(uint8_t& operand) {
@@ -532,33 +537,6 @@ void LR35902::swap(uint8_t& operand) {
 	operand = promoteNibble(low) | demoteNibble(high);
 	adjustZero(operand);
 	clearFlag(NF | HC | CF);
-}
-
-void LR35902::neg() {
-	auto original = A();
-	A() = 0;
-	A() = sub(original);
-	setFlag(CF, original != 0);
-}
-
-void LR35902::rrd() {
-	auto accumulator = A();
-	auto memory = m_memory.get(HL().word);
-	A() = (accumulator & 0xf0) | lowNibble(memory);
-	uint8_t updated = promoteNibble(lowNibble(accumulator)) | highNibble(memory);
-	m_memory.set(HL().word, updated);
-	adjustZero(A());
-	clearFlag(NF | HC);
-}
-
-void LR35902::rld() {
-	auto accumulator = A();
-	auto memory = m_memory.get(HL().word);
-	uint8_t updated = lowNibble(accumulator) | promoteNibble(memory);
-	A() = (accumulator & 0xf0) | highNibble(memory);
-	m_memory.set(HL().word, updated);
-	adjustZero(A());
-	clearFlag(NF | HC);
 }
 
 int LR35902::step() {
@@ -623,13 +601,11 @@ void LR35902::executeCB(int x, int y, int z, int p, int q) {
 		if (z == 6)
 			cycles += 2;
 		break;
-	case 1: { // BIT y, r[z]
-			auto operand = R(z);
-			bit(y, operand);
+	case 1: // BIT y, r[z]
+			bit(y, R(z));
 			cycles += 2;
 			if (z == 6)
 				cycles += 2;
-		}
 		break;
 	case 2:	// RES y, r[z]
 		res(y, R(z));
@@ -752,12 +728,11 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 			if (y == 6)
 				cycles += 2;
 			break;
-		case 6: { // 8-bit load immediate
-			auto& r = R(y);		// LD r,n
-			r = fetchByte();
+		case 6: // 8-bit load immediate
+			R(y) = fetchByte();
 			cycles += 2;
 			break;
-		} case 7:	// Assorted operations on accumulator/flags
+		case 7:	// Assorted operations on accumulator/flags
 			switch (y) {
 			case 0:
 				rlca();

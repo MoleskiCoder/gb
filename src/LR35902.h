@@ -217,9 +217,4 @@ private:
 	void cpl();
 
 	void swap(uint8_t& operand);
-
-	void neg();
-
-	void rrd();
-	void rld();
 };
