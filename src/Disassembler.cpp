@@ -203,39 +203,39 @@ void Disassembler::disassembleCB(
 	case 0:	// rot[y] r[z]
 		switch (y) {
 		case 0:
-			specification = "RLC " + R(y);
+			specification = "RLC " + R(z);
 			break;
 		case 1:
-			specification = "RRC " + R(y);
+			specification = "RRC " + R(z);
 			break;
 		case 2:
-			specification = "RL " + R(y);
+			specification = "RL " + R(z);
 			break;
 		case 3:
-			specification = "RR " + R(y);
+			specification = "RR " + R(z);
 			break;
 		case 4:
-			specification = "SLA " + R(y);
+			specification = "SLA " + R(z);
 			break;
 		case 5:
-			specification = "SRA " + R(y);
+			specification = "SRA " + R(z);
 			break;
 		case 6:
-			specification = "SWAP " + R(y);
+			specification = "SWAP " + R(z);
 			break;
 		case 7:
-			specification = "SRL " + R(y);
+			specification = "SRL " + R(z);
 			break;
 		}
 		break;
 	case 1: // BIT y, r[z]
-		specification = "BIT " + decimal(y) + "," + R(y);
+		specification = "BIT " + decimal(y) + "," + R(z);
 		break;
 	case 2:	// RES y, r[z]
-		specification = "RES " + decimal(y) + "," + R(y);
+		specification = "RES " + decimal(y) + "," + R(z);
 		break;
 	case 3:	// SET y, r[z]
-		specification = "SET " + decimal(y) + "," + R(y);
+		specification = "SET " + decimal(y) + "," + R(z);
 		break;
 	}
 }
