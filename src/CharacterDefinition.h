@@ -10,7 +10,7 @@ public:
 	CharacterDefinition() {
 	}
 
-	CharacterDefinition(const Bus& bus, uint16_t address) {
+	CharacterDefinition(const EightBit::Bus& bus, uint16_t address) {
 
 		for (auto row = 0; row < 8; ++row) {
 

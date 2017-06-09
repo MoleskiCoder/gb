@@ -72,15 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;C:\local\boost_1_64_0;C:\local\SDL2-2.0.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\SDL2-2.0.5\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;C:\local\boost_1_64_0;C:\local\SDL2-2.0.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\SDL2-2.0.5\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;C:\local\boost_1_64_0;C:\local\SDL2-2.0.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\SDL2-2.0.5\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;C:\local\boost_1_64_0;C:\local\SDL2-2.0.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\SDL2-2.0.5\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -144,34 +152,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
-    <ClInclude Include="Bus.h" />
     <ClInclude Include="CharacterDefinition.h" />
     <ClInclude Include="ColourPalette.h" />
     <ClInclude Include="Configuration.h" />
-    <ClInclude Include="Disassembler.h" />
     <ClInclude Include="Display.h" />
-    <ClInclude Include="EventArgs.h" />
     <ClInclude Include="Computer.h" />
-    <ClInclude Include="Processor.h" />
-    <ClInclude Include="LR35902.h" />
-    <ClInclude Include="Memory.h" />
-    <ClInclude Include="Profiler.h" />
-    <ClInclude Include="Signal.h" />
-    <ClInclude Include="StatusFlags.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
-    <ClCompile Include="Bus.cpp" />
     <ClCompile Include="ColourPalette.cpp" />
     <ClCompile Include="Configuration.cpp" />
-    <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="Display.cpp" />
-    <ClCompile Include="Processor.cpp" />
-    <ClCompile Include="LR35902.cpp" />
-    <ClCompile Include="Memory.cpp" />
-    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -181,20 +174,13 @@
     <ClCompile Include="gb.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\libraries\EightBit\LR35902\src\LR35902.vcxproj">
+      <Project>{7730ecf5-8206-4ecb-ba6b-6b5cfe50cfb2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libraries\EightBit\src\EightBit.vcxproj">
+      <Project>{a9c24bd9-0cb4-4c84-b09b-46b815f9da47}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\sdl2.redist.2.0.5\build\native\sdl2.redist.targets" Condition="Exists('..\packages\sdl2.redist.2.0.5\build\native\sdl2.redist.targets')" />
-    <Import Project="..\packages\sdl2.2.0.5\build\native\sdl2.targets" Condition="Exists('..\packages\sdl2.2.0.5\build\native\sdl2.targets')" />
-    <Import Project="..\packages\boost.1.63.0.0\build\native\boost.targets" Condition="Exists('..\packages\boost.1.63.0.0\build\native\boost.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\sdl2.redist.2.0.5\build\native\sdl2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.redist.2.0.5\build\native\sdl2.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\sdl2.2.0.5\build\native\sdl2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\sdl2.2.0.5\build\native\sdl2.targets'))" />
-    <Error Condition="!Exists('..\packages\boost.1.63.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost.1.63.0.0\build\native\boost.targets'))" />
-  </Target>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

@@ -17,7 +17,7 @@ public:
 		RasterHeight = 144,
 	};
 
-	Display(const ColourPalette& colours, Bus& bus);
+	Display(const ColourPalette& colours, EightBit::Bus& bus);
 
 	const std::vector<uint32_t>& pixels() const;
 
@@ -26,6 +26,6 @@ public:
 
 private:
 	std::vector<uint32_t> m_pixels;
-	Bus& m_bus;
+	EightBit::Bus& m_bus;
 	const ColourPalette& m_colours;
 };

@@ -14,11 +14,11 @@ class Board {
 public:
 	Board(const Configuration& configuration);
 
-	Signal<Board> DrawingLine;
+	EightBit::Signal<Board> DrawingLine;
 
-	Bus& BUS() { return m_bus; }
-	const LR35902& getCPU() const { return m_cpu; }
-	LR35902& getCPUMutable() { return m_cpu; }
+	EightBit::Bus& BUS() { return m_bus; }
+	const EightBit::LR35902& getCPU() const { return m_cpu; }
+	EightBit::LR35902& getCPUMutable() { return m_cpu; }
 
 	void initialise();
 
@@ -27,7 +27,7 @@ public:
 	void powerOff() { m_power = false; }
 
 	int getCyclesPerLine() const {
-		return m_configuration.getCyclesPerFrame() / Bus::TotalLineCount;
+		return m_configuration.getCyclesPerFrame() / EightBit::Bus::TotalLineCount;
 	}
 
 	int runRasterLines() {
@@ -40,7 +40,7 @@ public:
 
 	int runVerticalBlankLines() {
 		int cycles = generateInterrupt(0x40);	// VBLANK
-		for (int line = 0; line < (Bus::TotalLineCount - Display::RasterHeight); ++line)
+		for (int line = 0; line < (EightBit::Bus::TotalLineCount - Display::RasterHeight); ++line)
 			cycles += runHorizontalLine();
 		return cycles;
 	}
@@ -49,7 +49,7 @@ public:
 		DrawingLine.fire(*this);
 		auto cycles = runToLimit(getCyclesPerLine());
 		BUS().incrementLY();
-		if ((BUS().REG(Bus::LYC) == BUS().REG(Bus::LY)) && (BUS().REG(Bus::STAT) & Processor::Bit6))
+		if ((BUS().REG(EightBit::Bus::LYC) == BUS().REG(EightBit::Bus::LY)) && (BUS().REG(EightBit::Bus::STAT) & EightBit::Processor::Bit6))
 			cycles += generateInterrupt(0x48);
 		return cycles;
 	}
@@ -66,28 +66,28 @@ public:
 
 		switch (value) {
 		case 0x40:	// VBLANK
-			BUS().REG(Bus::IF) = Processor::Bit0;
+			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit0;
 			break;
 		case 0x48:	// LCDC Status
-			BUS().REG(Bus::IF) = Processor::Bit1;
+			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit1;
 			break;
 		case 0x50:	// Timer Overflow
-			BUS().REG(Bus::IF) = Processor::Bit2;
+			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit2;
 			break;
 		case 0x58:	// Serial Transfer
-			BUS().REG(Bus::IF) = Processor::Bit3;
+			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit3;
 			break;
 		case 0x60:	// Hi-Lo of P10-P13
-			BUS().REG(Bus::IF) = Processor::Bit4;
+			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit4;
 			break;
 		default:
 			assert(false);
 			break;
 		}
 
-		auto interrupt = m_cpu.IME() && (BUS().REG(Bus::IE) & BUS().REG(Bus::IF));
+		auto interrupt = m_cpu.IME() && (BUS().REG(EightBit::Bus::IE) & BUS().REG(EightBit::Bus::IF));
 
-		BUS().REG(Bus::IF) = 0;
+		BUS().REG(EightBit::Bus::IF) = 0;
 
 		if (interrupt)
 			return m_cpu.interrupt(value);
@@ -97,13 +97,13 @@ public:
 
 private:
 	const Configuration& m_configuration;
-	LR35902 m_cpu;
-	Bus m_bus;
+	EightBit::LR35902 m_cpu;
+	EightBit::Bus m_bus;
 	bool m_power;
 
-	Profiler m_profiler;
-	Disassembler m_disassembler;
+	EightBit::Profiler m_profiler;
+	EightBit::Disassembler m_disassembler;
 
-	void Cpu_ExecutingInstruction_Debug(LR35902& cpu);
-	void Cpu_ExecutingInstruction_Profile(const LR35902& cpu);
+	void Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu);
+	void Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu);
 };

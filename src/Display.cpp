@@ -3,7 +3,7 @@
 #include "Processor.h"
 #include "CharacterDefinition.h"
 
-Display::Display(const ColourPalette& colours, Bus& bus)
+Display::Display(const ColourPalette& colours, EightBit::Bus& bus)
 : m_bus(bus),
   m_colours(colours) {
 }
@@ -18,30 +18,30 @@ void Display::initialise() {
 
 void Display::render() {
 
-	auto control = m_bus.REG(Bus::LCDC);
-	auto on = control & Processor::Bit7;
+	auto control = m_bus.REG(EightBit::Bus::LCDC);
+	auto on = control & EightBit::Processor::Bit7;
 	if (on) {
 
-		auto windowArea = (control & Processor::Bit6) ? 0x9c00 : 0x9800;
-		auto window = (control & Processor::Bit5) != 0;
-		auto bgCharacters = (control & Processor::Bit4) ? 0x8000 : 0x8800;
-		auto bgArea = (control & Processor::Bit3) ? 0x9c00 : 0x9800;
-		auto objBlockHeight = (control & Processor::Bit2) ? 16 : 8;
-		auto objDisplay = (control & Processor::Bit1) != 0;
-		auto bgDisplay = (control & Processor::Bit0) != 0;
+		auto windowArea = (control & EightBit::Processor::Bit6) ? 0x9c00 : 0x9800;
+		auto window = (control & EightBit::Processor::Bit5) != 0;
+		auto bgCharacters = (control & EightBit::Processor::Bit4) ? 0x8000 : 0x8800;
+		auto bgArea = (control & EightBit::Processor::Bit3) ? 0x9c00 : 0x9800;
+		auto objBlockHeight = (control & EightBit::Processor::Bit2) ? 16 : 8;
+		auto objDisplay = (control & EightBit::Processor::Bit1) != 0;
+		auto bgDisplay = (control & EightBit::Processor::Bit0) != 0;
 
-		auto scrollX = m_bus.REG(Bus::SCX);
-		auto scrollY = m_bus.REG(Bus::SCY);
+		auto scrollX = m_bus.REG(EightBit::Bus::SCX);
+		auto scrollY = m_bus.REG(EightBit::Bus::SCY);
 
-		auto paletteRaw = m_bus.REG(Bus::BGP);
+		auto paletteRaw = m_bus.REG(EightBit::Bus::BGP);
 		std::array<int, 4> palette;
 		palette[0] = paletteRaw & 0b11;
 		palette[1] = (paletteRaw & 0b1100) >> 2;
 		palette[2] = (paletteRaw & 0b110000) >> 4;
 		palette[3] = (paletteRaw & 0b11000000) >> 6;
 
-		auto wx = m_bus.REG(Bus::WX);
-		auto wy = m_bus.REG(Bus::WY);
+		auto wx = m_bus.REG(EightBit::Bus::WX);
+		auto wy = m_bus.REG(EightBit::Bus::WY);
 
 		auto offsetX = window ? wx - 7 : 0;
 		auto offsetY = window ? wy : 0;

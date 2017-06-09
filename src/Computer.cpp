@@ -181,5 +181,5 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
 }
 
-void Computer::Board_DrawingLine(Board& board) {
+void Computer::Board_DrawingLine(const Board& board) {
 }

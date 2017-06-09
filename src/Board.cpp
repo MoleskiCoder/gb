@@ -3,7 +3,7 @@
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
-  m_cpu(LR35902(m_bus)),
+  m_cpu(EightBit::LR35902(m_bus)),
   m_power(false),
   m_profiler(m_cpu) {
 }
@@ -47,19 +47,22 @@ void Board::initialise() {
 
 	m_bus.reset();
 	m_cpu.initialise();
-	m_cpu.setProgramCounter(0);
+
+	EightBit::register16_t start;
+	start.word = 0;
+	m_cpu.setProgramCounter(start);
 }
 
-void Board::Cpu_ExecutingInstruction_Profile(const LR35902& cpu) {
+void Board::Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu) {
 	const auto pc = cpu.getProgramCounter();
-	m_profiler.add(pc, BUS().peek(pc));
+	m_profiler.add(pc.word, BUS().peek(pc.word));
 }
 
-void Board::Cpu_ExecutingInstruction_Debug(LR35902& cpu) {
+void Board::Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu) {
 
 	std::cerr
-		<< Disassembler::state(cpu)
+		<< EightBit::Disassembler::state(m_cpu)
 		<< "\t"
-		<< m_disassembler.disassemble(cpu)
+		<< m_disassembler.disassemble(m_cpu)
 		<< '\n';
 }
