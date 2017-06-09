@@ -296,60 +296,52 @@ uint16_t LR35902::add(uint16_t value) {
 	return result;
 }
 
-uint8_t LR35902::sbc(uint8_t value) {
+void LR35902::sub(uint8_t& operand, uint8_t value, bool carry) {
 
-	uint16_t result = A() - value;
-	if (F() & CF)
+	auto before = operand;
+
+	uint16_t result = before - value;
+	if (carry && (F() & CF))
 		--result;
 
-	adjustZero((uint8_t)result);
-	adjustHalfCarrySub(A(), value, result);
+	operand = Memory::lowByte(result);
 
+	adjustZero(operand);
+	adjustHalfCarrySub(before, value, result);
 	setFlag(NF);
 	setFlag(CF, result & Bit8);
-
-	return (uint8_t)result;
 }
 
-uint8_t LR35902::sub(uint8_t value) {
-
-	uint16_t result = A() - value;
-
-	adjustZero((uint8_t)result);
-	adjustHalfCarrySub(A(), value, result);
-
-	setFlag(NF);
-	setFlag(CF, result & Bit8);
-
-	return (uint8_t)result;
+void LR35902::sbc(uint8_t& operand, uint8_t value) {
+	sub(operand, value, true);
 }
 
-uint8_t LR35902::adc(uint8_t value) {
+void LR35902::sub(uint8_t& operand, uint8_t value) {
+	sub(operand, value, false);
+}
 
-	uint16_t result = A() + value;
-	if (F() & CF)
+void LR35902::add(uint8_t& operand, uint8_t value, bool carry) {
+
+	auto before = operand;
+
+	uint16_t result = before + value;
+	if (carry && (F() & CF))
 		++result;
 
-	adjustZero((uint8_t)result);
-	adjustHalfCarryAdd(A(), value, result);
+	operand = Memory::lowByte(result);
 
+	adjustZero(operand);
+	adjustHalfCarryAdd(before, value, result);
 	clearFlag(NF);
 	setFlag(CF, result & Bit8);
-
-	return (uint8_t)result;
 }
 
-uint8_t LR35902::add(uint8_t value) {
+void LR35902::adc(uint8_t& operand, uint8_t value) {
+	add(operand, value, true);
+}
 
-	uint16_t result = A() + value;
-
-	adjustZero((uint8_t)result);
-	adjustHalfCarryAdd(A(), value, result);
-
-	clearFlag(NF);
-	setFlag(CF, result & Bit8);
-
-	return (uint8_t)result;
+void LR35902::add(uint8_t& operand, uint8_t value) {
+	add(operand, value, false);
 }
 
 //
@@ -378,7 +370,8 @@ void LR35902::ora(uint8_t value) {
 }
 
 void LR35902::compare(uint8_t value) {
-	sub(value);
+	auto check = A();
+	sub(check, value);
 }
 
 //
@@ -776,16 +769,16 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 	case 2:	// Operate on accumulator and register/memory location
 		switch (y) {
 		case 0:	// ADD A,r
-			A() = add(R(z));
+			add(A(), R(z));
 			break;
 		case 1:	// ADC A,r
-			A() = adc(R(z));
+			adc(A(), R(z));
 			break;
 		case 2:	// SUB r
-			A() = sub(R(z));
+			sub(A(), R(z));
 			break;
 		case 3:	// SBC A,r
-			A() = sbc(R(z));
+			sbc(A(), R(z));
 			break;
 		case 4:	// AND r
 			anda(R(z));
@@ -883,16 +876,16 @@ void LR35902::executeOther(int x, int y, int z, int p, int q) {
 		case 6:	// Operate on accumulator and immediate operand: alu[y] n
 			switch (y) {
 			case 0:	// ADD A,n
-				A() = add(fetchByte());
+				add(A(), fetchByte());
 				break;
 			case 1:	// ADC A,n
-				A() = adc(fetchByte());
+				adc(A(), fetchByte());
 				break;
 			case 2:	// SUB n
-				A() = sub(fetchByte());
+				sub(A(), fetchByte());
 				break;
 			case 3:	// SBC A,n
-				A() = sbc(fetchByte());
+				sbc(A(), fetchByte());
 				break;
 			case 4:	// AND n
 				anda(fetchByte());

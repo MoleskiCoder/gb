@@ -180,11 +180,13 @@ private:
 
 	uint16_t add(uint16_t value);
 
-	uint8_t sbc(uint8_t value);
-	uint8_t adc(uint8_t value);
+	void sub(uint8_t& operand, uint8_t value, bool carry);
+	void sub(uint8_t& operand, uint8_t value);
+	void sbc(uint8_t& operand, uint8_t value);
 
-	uint8_t sub(uint8_t value);
-	uint8_t add(uint8_t value);
+	void add(uint8_t& operand, uint8_t value, bool carry);
+	void add(uint8_t& operand, uint8_t value);
+	void adc(uint8_t& operand, uint8_t value);
 
 	void andr(uint8_t& operand, uint8_t value);
 
