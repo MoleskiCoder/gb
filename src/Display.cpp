@@ -18,7 +18,7 @@ void Display::initialise() {
 
 void Display::render() {
 
-	auto control = m_bus.REG(EightBit::Bus::LCDC);
+	auto control = m_bus.readRegister(EightBit::Bus::LCDC);
 	auto on = control & EightBit::Processor::Bit7;
 	if (on) {
 
@@ -30,18 +30,18 @@ void Display::render() {
 		auto objDisplay = (control & EightBit::Processor::Bit1) != 0;
 		auto bgDisplay = (control & EightBit::Processor::Bit0) != 0;
 
-		auto scrollX = m_bus.REG(EightBit::Bus::SCX);
-		auto scrollY = m_bus.REG(EightBit::Bus::SCY);
+		auto scrollX = m_bus.readRegister(EightBit::Bus::SCX);
+		auto scrollY = m_bus.readRegister(EightBit::Bus::SCY);
 
-		auto paletteRaw = m_bus.REG(EightBit::Bus::BGP);
+		auto paletteRaw = m_bus.readRegister(EightBit::Bus::BGP);
 		std::array<int, 4> palette;
 		palette[0] = paletteRaw & 0b11;
 		palette[1] = (paletteRaw & 0b1100) >> 2;
 		palette[2] = (paletteRaw & 0b110000) >> 4;
 		palette[3] = (paletteRaw & 0b11000000) >> 6;
 
-		auto wx = m_bus.REG(EightBit::Bus::WX);
-		auto wy = m_bus.REG(EightBit::Bus::WY);
+		auto wx = m_bus.readRegister(EightBit::Bus::WX);
+		auto wy = m_bus.readRegister(EightBit::Bus::WY);
 
 		auto offsetX = window ? wx - 7 : 0;
 		auto offsetY = window ? wy : 0;

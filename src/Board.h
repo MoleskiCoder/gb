@@ -49,7 +49,7 @@ public:
 		DrawingLine.fire(*this);
 		auto cycles = runToLimit(getCyclesPerLine());
 		BUS().incrementLY();
-		if ((BUS().REG(EightBit::Bus::LYC) == BUS().REG(EightBit::Bus::LY)) && (BUS().REG(EightBit::Bus::STAT) & EightBit::Processor::Bit6))
+		if ((BUS().readRegister(EightBit::Bus::STAT) & EightBit::Processor::Bit6) && (BUS().readRegister(EightBit::Bus::LYC) == BUS().readRegister(EightBit::Bus::LY)))
 			cycles += generateInterrupt(0x48);
 		return cycles;
 	}
@@ -66,28 +66,28 @@ public:
 
 		switch (value) {
 		case 0x40:	// VBLANK
-			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit0;
+			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit0);
 			break;
 		case 0x48:	// LCDC Status
-			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit1;
+			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit1);
 			break;
 		case 0x50:	// Timer Overflow
-			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit2;
+			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit2);
 			break;
 		case 0x58:	// Serial Transfer
-			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit3;
+			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit3);
 			break;
 		case 0x60:	// Hi-Lo of P10-P13
-			BUS().REG(EightBit::Bus::IF) = EightBit::Processor::Bit4;
+			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit4);
 			break;
 		default:
-			assert(false);
+			__assume(0);
 			break;
 		}
 
-		auto interrupt = m_cpu.IME() && (BUS().REG(EightBit::Bus::IE) & BUS().REG(EightBit::Bus::IF));
+		auto interrupt = m_cpu.IME() && (BUS().readRegister(EightBit::Bus::IE) & BUS().readRegister(EightBit::Bus::IF));
 
-		BUS().REG(EightBit::Bus::IF) = 0;
+		BUS().writeRegister(EightBit::Bus::IF, 0);
 
 		if (interrupt)
 			return m_cpu.interrupt(value);
@@ -106,4 +106,6 @@ private:
 
 	void Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu);
 	void Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu);
+
+	void Bus_WrittenByte(const EightBit::AddressEventArgs& e);
 };
