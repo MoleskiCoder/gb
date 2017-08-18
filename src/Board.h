@@ -17,8 +17,7 @@ public:
 	EightBit::Signal<Board> DrawingLine;
 
 	EightBit::Bus& BUS() { return m_bus; }
-	const EightBit::LR35902& getCPU() const { return m_cpu; }
-	EightBit::LR35902& getCPUMutable() { return m_cpu; }
+	EightBit::LR35902& CPU() { return m_cpu; }
 
 	void initialise();
 
@@ -39,7 +38,8 @@ public:
 	}
 
 	int runVerticalBlankLines() {
-		int cycles = generateInterrupt(0x40);	// VBLANK
+		BUS().triggerInterrupt(EightBit::Bus::Interrupts::VerticalBlank);
+		int cycles = 0;
 		for (int line = 0; line < (EightBit::Bus::TotalLineCount - Display::RasterHeight); ++line)
 			cycles += runHorizontalLine();
 		return cycles;
@@ -47,52 +47,11 @@ public:
 
 	int runHorizontalLine() {
 		DrawingLine.fire(*this);
-		auto cycles = runToLimit(getCyclesPerLine());
+		auto cycles = m_cpu.run(getCyclesPerLine());
 		BUS().incrementLY();
 		if ((BUS().readRegister(EightBit::Bus::STAT) & EightBit::Processor::Bit6) && (BUS().readRegister(EightBit::Bus::LYC) == BUS().readRegister(EightBit::Bus::LY)))
-			cycles += generateInterrupt(0x48);
+			BUS().triggerInterrupt(EightBit::Bus::Interrupts::DisplayControlStatus);
 		return cycles;
-	}
-
-	int runToLimit(int limit) {
-		int cycles = 0;
-		do {
-			cycles += m_cpu.step();
-		} while (cycles < limit);
-		return cycles;
-	}
-
-	int generateInterrupt(uint8_t value) {
-
-		switch (value) {
-		case 0x40:	// VBLANK
-			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit0);
-			break;
-		case 0x48:	// LCDC Status
-			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit1);
-			break;
-		case 0x50:	// Timer Overflow
-			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit2);
-			break;
-		case 0x58:	// Serial Transfer
-			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit3);
-			break;
-		case 0x60:	// Hi-Lo of P10-P13
-			BUS().writeRegister(EightBit::Bus::IF, EightBit::Processor::Bit4);
-			break;
-		default:
-			__assume(0);
-			break;
-		}
-
-		auto interrupt = m_cpu.IME() && (BUS().readRegister(EightBit::Bus::IE) & BUS().readRegister(EightBit::Bus::IF));
-
-		BUS().writeRegister(EightBit::Bus::IF, 0);
-
-		if (interrupt)
-			return m_cpu.interrupt(value);
-
-		return 0;
 	}
 
 private:

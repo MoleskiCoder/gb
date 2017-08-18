@@ -103,7 +103,7 @@ void Computer::runLoop() {
 	m_frames = 0UL;
 	m_startTicks = ::SDL_GetTicks();
 
-	auto& cpu = m_board.getCPUMutable();
+	auto& cpu = m_board.CPU();
 
 	m_board.powerOn();
 

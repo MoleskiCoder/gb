@@ -23,15 +23,15 @@ void Board::initialise() {
 
 	//BUS().loadRam(romDirectory + "/01-special.gb", 0x0000);				// Passed
 	//BUS().loadRam(romDirectory + "/02-interrupts.gb", 0x0000);			// EI Failed #2
-	//BUS().loadRam(romDirectory + "/03-op sp,hl.gb", 0x0000);				// Failed 08 08 08 08
+	//BUS().loadRam(romDirectory + "/03-op sp,hl.gb", 0x0000);				// Failed E8 E8 F8 F8
 	//BUS().loadRam(romDirectory + "/04-op r,imm.gb", 0x0000);				// Passed
 	//BUS().loadRam(romDirectory + "/05-op rp.gb", 0x0000);					// Passed
 	//BUS().loadRam(romDirectory + "/06-ld r,r.gb", 0x0000);				// Passed
 	//BUS().loadRam(romDirectory + "/07-jr,jp,call,ret,rst.gb", 0x0000);	// Passed
 	//BUS().loadRam(romDirectory + "/08-misc instrs.gb", 0x0000);			// Passed
-	//BUS().loadRam(romDirectory + "/09-op r,r.gb", 0x0000);				// Failed (lots)
+	//BUS().loadRam(romDirectory + "/09-op r,r.gb", 0x0000);				// Passed
 	//BUS().loadRam(romDirectory + "/10-bit ops.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/11-op a,(hl).gb", 0x0000);				// Failed 0B 06
+	//BUS().loadRam(romDirectory + "/11-op a,(hl).gb", 0x0000);				// Passed
 	BUS().loadRam(romDirectory + "/instr_timing.gb", 0x0000);				// Failed #255
 	//BUS().loadRam(romDirectory + "/interrupt_time.gb", 0x0000);			// Failed
 
@@ -64,12 +64,12 @@ void Board::Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu) {
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu) {
-
-	std::cerr
-		<< EightBit::Disassembler::state(m_cpu)
-		<< " "
-		<< m_disassembler.disassemble(m_cpu)
-		<< '\n';
+	if (m_cpu.PC().high > 0)	// XXXX Ignore boot ROM decode
+		std::cerr
+			<< EightBit::Disassembler::state(m_cpu)
+			<< " "
+			<< m_disassembler.disassemble(m_cpu)
+			<< '\n';
 }
 
 void Board::Bus_WrittenByte(const EightBit::AddressEventArgs& e) {
