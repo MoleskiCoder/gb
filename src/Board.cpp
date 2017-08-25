@@ -17,28 +17,26 @@ void Board::initialise() {
 
 	BUS().loadBootRom(romDirectory + "/DMG_ROM.bin");
 
-	//BUS().loadRam(romDirectory + "/Tetris (World).gb", 0x0000);
+	//BUS().loadGameRom(romDirectory + "/Tetris (World).gb");
 
-	//BUS().loadRam(romDirectory + "/cpu_instrs.gb", 0x0000);					// Loops + failures
+	//BUS().loadGameRom(romDirectory + "/cpu_instrs.gb");				// 10 Passed, 1 (03) fail
 
-	//BUS().loadRam(romDirectory + "/01-special.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/02-interrupts.gb", 0x0000);			// EI Failed #2
-	//BUS().loadRam(romDirectory + "/03-op sp,hl.gb", 0x0000);				// Failed E8 E8 F8 F8
-	//BUS().loadRam(romDirectory + "/04-op r,imm.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/05-op rp.gb", 0x0000);					// Passed
-	//BUS().loadRam(romDirectory + "/06-ld r,r.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/07-jr,jp,call,ret,rst.gb", 0x0000);	// Passed
-	//BUS().loadRam(romDirectory + "/08-misc instrs.gb", 0x0000);			// Passed
-	//BUS().loadRam(romDirectory + "/09-op r,r.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/10-bit ops.gb", 0x0000);				// Passed
-	//BUS().loadRam(romDirectory + "/11-op a,(hl).gb", 0x0000);				// Passed
-	BUS().loadRam(romDirectory + "/instr_timing.gb", 0x0000);				// Failed #255
-	//BUS().loadRam(romDirectory + "/interrupt_time.gb", 0x0000);			// Failed
+	//BUS().loadGameRom(romDirectory + "/01-special.gb");				// Passed
+	//BUS().loadGameRom(romDirectory + "/02-interrupts.gb");			// Passed
+	//BUS().loadGameRom(romDirectory + "/03-op sp,hl.gb");				// Failed E8 F8
+	//BUS().loadGameRom(romDirectory + "/04-op r,imm.gb");				// Passed
+	//BUS().loadGameRom(romDirectory + "/05-op rp.gb");					// Passed
+	//BUS().loadGameRom(romDirectory + "/06-ld r,r.gb");				// Passed
+	//BUS().loadGameRom(romDirectory + "/07-jr,jp,call,ret,rst.gb");	// Passed
+	//BUS().loadGameRom(romDirectory + "/08-misc instrs.gb");			// Passed
+	//BUS().loadGameRom(romDirectory + "/09-op r,r.gb");				// Passed
+	//BUS().loadGameRom(romDirectory + "/10-bit ops.gb");				// Passed
+	//BUS().loadGameRom(romDirectory + "/11-op a,(hl).gb");				// Passed
+	BUS().loadGameRom(romDirectory + "/instr_timing.gb");				// Failed #255
+	//BUS().loadGameRom(romDirectory + "/interrupt_time.gb");			// Failed
 
-	//BUS().loadRam(romDirectory + "/opus5.gb", 0x0000);
-	//BUS().loadRam(romDirectory + "/ttt.gb", 0x0000);
-
-	BUS().lock(0, 0x8000);
+	//BUS().loadGameRom(romDirectory + "/opus5.gb");
+	//BUS().loadGameRom(romDirectory + "/ttt.gb");
 
 	if (m_configuration.isProfileMode()) {
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Profile, this, std::placeholders::_1));
@@ -64,7 +62,7 @@ void Board::Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu) {
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu) {
-	if (m_cpu.PC().high > 0)	// XXXX Ignore boot ROM decode
+	if (m_bus.bootRomDisabled())
 		std::cerr
 			<< EightBit::Disassembler::state(m_cpu)
 			<< " "
