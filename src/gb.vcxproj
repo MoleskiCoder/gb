@@ -152,10 +152,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
-    <ClInclude Include="CharacterDefinition.h" />
     <ClInclude Include="ColourPalette.h" />
     <ClInclude Include="Configuration.h" />
-    <ClInclude Include="Display.h" />
     <ClInclude Include="Computer.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -164,7 +162,6 @@
     <ClCompile Include="ColourPalette.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Computer.cpp" />
-    <ClCompile Include="Display.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

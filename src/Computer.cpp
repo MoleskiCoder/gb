@@ -12,11 +12,11 @@ Computer::Computer(const Configuration& configuration)
 	m_bitmapTexture(nullptr),
 	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
 	m_pixelFormat(nullptr),
-	m_fps(configuration.getFramesPerSecond()),
+	m_fps(EightBit::LR35902::framesPerSecond()),
 	m_startTicks(0),
 	m_frames(0),
 	m_vsync(false),
-	m_lcd(m_colours, m_board.BUS()) {
+	m_lcd(&m_colours, m_board.BUS()) {
 }
 
 void Computer::initialise() {
@@ -24,7 +24,6 @@ void Computer::initialise() {
 	verifySDLCall(::SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC), "Failed to initialise SDL: ");
 
 	m_board.initialise();
-	m_board.DrawingLine.connect(std::bind(&Computer::Board_DrawingLine, this, std::placeholders::_1));
 
 	auto windowWidth = getScreenWidth();
 	auto windowHeight = getScreenHeight();
@@ -45,7 +44,7 @@ void Computer::initialise() {
 	m_vsync = m_configuration.getVsyncLocked();
 	Uint32 rendererFlags = 0;
 	if (m_vsync) {
-		auto required = m_configuration.getFramesPerSecond();
+		auto required = m_fps;
 		if (required == mode.refresh_rate) {
 			rendererFlags |= SDL_RENDERER_PRESENTVSYNC;
 			::SDL_Log("Attempting to use SDL_RENDERER_PRESENTVSYNC");
@@ -91,7 +90,7 @@ void Computer::configureBackground() const {
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, Display::RasterWidth, Display::RasterHeight);
+	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, EightBit::Display::RasterWidth, EightBit::Display::RasterHeight);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
@@ -125,9 +124,9 @@ void Computer::runLoop() {
 			}
 		}
 
-		cycles += m_configuration.getCyclesPerFrame();
+		cycles += EightBit::LR35902::cyclesPerFrame();
 
-		cycles -= m_board.runRasterLines();
+		cycles -= m_board.CPU().runRasterLines();
 
 		if (m_configuration.isDrawGraphics())
 			drawFrame();
@@ -142,7 +141,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		cycles -= m_board.runVerticalBlankLines();
+		cycles -= m_board.CPU().runVerticalBlankLines();
 	}
 }
 
@@ -156,7 +155,7 @@ void Computer::drawFrame() {
 	
 	m_lcd.render();
 
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), EightBit::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 
 		"Unable to copy texture to renderer");
@@ -179,7 +178,4 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	int vsync = (flags & SDL_RENDERER_PRESENTVSYNC) != 0;
 	int targetTexture = (flags & SDL_RENDERER_TARGETTEXTURE) != 0;
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
-}
-
-void Computer::Board_DrawingLine(const Board& board) {
 }

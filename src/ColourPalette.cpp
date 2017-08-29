@@ -3,10 +3,6 @@
 
 #include <SDL.h>
 
-ColourPalette::ColourPalette()
-: m_colours(4) {
-}
-
 void ColourPalette::load(SDL_PixelFormat* hardware) {
 	m_colours[Off] = ::SDL_MapRGBA(hardware, 0x9C, 0xBD, 0x0F, SDL_ALPHA_OPAQUE);
 	m_colours[Light] = ::SDL_MapRGBA(hardware, 0x8C, 0xAD, 0x0F, SDL_ALPHA_OPAQUE);

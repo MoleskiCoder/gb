@@ -45,7 +45,7 @@ private:
 	Uint32 m_pixelType;
 	SDL_PixelFormat* m_pixelFormat;
 
-	Display m_lcd;
+	EightBit::Display m_lcd;
 
 	int m_fps;
 	Uint32 m_startTicks;
@@ -58,11 +58,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return Display::RasterWidth * DisplayScale;
+		return EightBit::Display::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return Display::RasterHeight * DisplayScale;
+		return EightBit::Display::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);
@@ -70,6 +70,4 @@ private:
 
 	static void dumpRendererInformation();
 	static void dumpRendererInformation(::SDL_RendererInfo info);
-
-	void Board_DrawingLine(const Board& board);
 };
