@@ -19,11 +19,10 @@ void Board::initialise() {
 
 	//BUS().loadGameRom(romDirectory + "/Tetris (World).gb");
 
-	//BUS().loadGameRom(romDirectory + "/cpu_instrs.gb");				// 10 Passed, 1 (03) fail
-
+	//BUS().loadGameRom(romDirectory + "/cpu_instrs.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/01-special.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/02-interrupts.gb");			// Passed
-	//BUS().loadGameRom(romDirectory + "/03-op sp,hl.gb");				// Failed E8 F8
+	//BUS().loadGameRom(romDirectory + "/03-op sp,hl.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/04-op r,imm.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/05-op rp.gb");					// Passed
 	//BUS().loadGameRom(romDirectory + "/06-ld r,r.gb");				// Passed
@@ -32,6 +31,7 @@ void Board::initialise() {
 	//BUS().loadGameRom(romDirectory + "/09-op r,r.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/10-bit ops.gb");				// Passed
 	//BUS().loadGameRom(romDirectory + "/11-op a,(hl).gb");				// Passed
+
 	BUS().loadGameRom(romDirectory + "/instr_timing.gb");				// Failed #255
 	//BUS().loadGameRom(romDirectory + "/interrupt_time.gb");			// Failed
 

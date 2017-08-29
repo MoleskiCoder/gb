@@ -49,7 +49,7 @@ public:
 		DrawingLine.fire(*this);
 		auto cycles = m_cpu.run(getCyclesPerLine());
 		BUS().incrementLY();
-		if ((BUS().readRegister(EightBit::Bus::STAT) & EightBit::Processor::Bit6) && (BUS().readRegister(EightBit::Bus::LYC) == BUS().readRegister(EightBit::Bus::LY)))
+		if ((BUS().peekRegister(EightBit::Bus::STAT) & EightBit::Processor::Bit6) && (BUS().peekRegister(EightBit::Bus::LYC) == BUS().peekRegister(EightBit::Bus::LY)))
 			BUS().triggerInterrupt(EightBit::Bus::Interrupts::DisplayControlStatus);
 		return cycles;
 	}

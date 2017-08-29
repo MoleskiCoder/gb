@@ -18,30 +18,30 @@ void Display::initialise() {
 
 void Display::render() {
 
-	auto control = m_bus.readRegister(EightBit::Bus::LCDC);
-	auto on = control & EightBit::Processor::Bit7;
+	auto control = m_bus.peekRegister(EightBit::Bus::LCDC);
+	auto on = control & EightBit::Bus::LcdEnable;
 	if (on) {
 
-		auto windowArea = (control & EightBit::Processor::Bit6) ? 0x9c00 : 0x9800;
-		auto window = (control & EightBit::Processor::Bit5) != 0;
-		auto bgCharacters = (control & EightBit::Processor::Bit4) ? 0x8000 : 0x8800;
-		auto bgArea = (control & EightBit::Processor::Bit3) ? 0x9c00 : 0x9800;
-		auto objBlockHeight = (control & EightBit::Processor::Bit2) ? 16 : 8;
-		auto objDisplay = (control & EightBit::Processor::Bit1) != 0;
-		auto bgDisplay = (control & EightBit::Processor::Bit0) != 0;
+		auto windowArea = (control & EightBit::Bus::WindowCodeAreaSelection) ? 0x9c00 : 0x9800;
+		auto window = (control & EightBit::Bus::WindowEnable) != 0;
+		auto bgCharacters = (control & EightBit::Bus::BackgroundCharacterDataSelection) ? 0x8000 : 0x8800;
+		auto bgArea = (control & EightBit::Bus::BackgroundCodeAreaSelection) ? 0x9c00 : 0x9800;
+		auto objBlockHeight = (control & EightBit::Bus::ObjectBlockCompositionSelection) ? 16 : 8;
+		auto objEnable = (control & EightBit::Bus::ObjectEnable) != 0;
+		auto bgDisplay = (control & EightBit::Bus::DisplayBackground) != 0;
 
-		auto scrollX = m_bus.readRegister(EightBit::Bus::SCX);
-		auto scrollY = m_bus.readRegister(EightBit::Bus::SCY);
+		auto scrollX = m_bus.peekRegister(EightBit::Bus::SCX);
+		auto scrollY = m_bus.peekRegister(EightBit::Bus::SCY);
 
-		auto paletteRaw = m_bus.readRegister(EightBit::Bus::BGP);
+		auto paletteRaw = m_bus.peekRegister(EightBit::Bus::BGP);
 		std::array<int, 4> palette;
 		palette[0] = paletteRaw & 0b11;
 		palette[1] = (paletteRaw & 0b1100) >> 2;
 		palette[2] = (paletteRaw & 0b110000) >> 4;
 		palette[3] = (paletteRaw & 0b11000000) >> 6;
 
-		auto wx = m_bus.readRegister(EightBit::Bus::WX);
-		auto wy = m_bus.readRegister(EightBit::Bus::WY);
+		auto wx = m_bus.peekRegister(EightBit::Bus::WX);
+		auto wy = m_bus.peekRegister(EightBit::Bus::WY);
 
 		auto offsetX = window ? wx - 7 : 0;
 		auto offsetY = window ? wy : 0;
