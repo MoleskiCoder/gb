@@ -108,6 +108,8 @@ void Computer::runLoop() {
 
 	auto cycles = 0;
 
+	auto graphics = m_configuration.isDrawGraphics();
+
 	while (m_board.powered()) {
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {
@@ -128,16 +130,16 @@ void Computer::runLoop() {
 
 		cycles -= m_board.CPU().runRasterLines();
 
-		if (m_configuration.isDrawGraphics())
+		if (graphics) {
 			drawFrame();
-
-		::SDL_RenderPresent(m_renderer);
-		if (!m_vsync) {
-			const auto elapsedTicks = ::SDL_GetTicks() - m_startTicks;
-			const auto neededTicks = (++m_frames / (float)m_fps) * 1000.0;
-			auto sleepNeeded = (int)(neededTicks - elapsedTicks);
-			if (sleepNeeded > 0) {
-				::SDL_Delay(sleepNeeded);
+			::SDL_RenderPresent(m_renderer);
+			if (!m_vsync) {
+				const auto elapsedTicks = ::SDL_GetTicks() - m_startTicks;
+				const auto neededTicks = (++m_frames / (float)m_fps) * 1000.0;
+				auto sleepNeeded = (int)(neededTicks - elapsedTicks);
+				if (sleepNeeded > 0) {
+					::SDL_Delay(sleepNeeded);
+				}
 			}
 		}
 
