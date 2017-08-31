@@ -4,13 +4,10 @@
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
   m_cpu(EightBit::LR35902(m_bus)),
-  m_power(false),
   m_profiler(m_cpu) {
 }
 
 void Board::initialise() {
-
-	m_power = false;
 
 	BUS().clear();
 	auto romDirectory = m_configuration.getRomDirectory();

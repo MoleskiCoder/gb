@@ -104,18 +104,18 @@ void Computer::runLoop() {
 
 	auto& cpu = m_board.CPU();
 
-	m_board.powerOn();
+	cpu.powerOn();
 
 	auto cycles = 0;
 
 	auto graphics = m_configuration.isDrawGraphics();
 
-	while (m_board.powered()) {
+	while (cpu.powered()) {
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {
 			switch (e.type) {
 			case SDL_QUIT:
-				m_board.powerOff();
+				cpu.powerOff();
 				break;
 			case SDL_KEYDOWN:
 				handleKeyDown(e.key.keysym.sym);

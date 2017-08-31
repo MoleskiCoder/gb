@@ -17,15 +17,10 @@ public:
 
 	void initialise();
 
-	bool powered() const { return m_power; }
-	void powerOn() { m_power = true; }
-	void powerOff() { m_power = false; }
-
 private:
 	const Configuration& m_configuration;
 	EightBit::LR35902 m_cpu;
 	EightBit::Bus m_bus;
-	bool m_power;
 
 	EightBit::Profiler m_profiler;
 	EightBit::Disassembler m_disassembler;
