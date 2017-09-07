@@ -1,27 +1,17 @@
 #pragma once
 
-#include <cstdint>
 #include <stdexcept>
-
-#include <functional>
-
-#include <vector>
-#include <array>
-#include <map>
-
-#include <bitset>
 #include <string>
-
-#include <algorithm>
-
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-
-#include <boost/format.hpp>
 
 #include <SDL.h>
+
+#include <Display.h>
+#include <AbstractColourPalette.h>
+#include <Bus.h>
+#include <LR35902.h>
+#include <Profiler.h>
+#include <Disassembler.h>
 
 #ifdef _MSC_VER
 #pragma comment(lib, "SDL2.lib")

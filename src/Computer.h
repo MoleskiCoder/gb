@@ -5,9 +5,10 @@
 
 #include <SDL.h>
 
+#include <Display.h>
+
 #include "Board.h"
 #include "ColourPalette.h"
-#include "Display.h"
 
 class Configuration;
 
@@ -45,7 +46,7 @@ private:
 	Uint32 m_pixelType;
 	SDL_PixelFormat* m_pixelFormat;
 
-	EightBit::Display m_lcd;
+	EightBit::GameBoy::Display m_lcd;
 
 	int m_fps;
 	Uint32 m_startTicks;
@@ -58,11 +59,11 @@ private:
 	void createBitmapTexture();
 
 	int getScreenWidth() const {
-		return EightBit::Display::RasterWidth * DisplayScale;
+		return EightBit::GameBoy::Display::RasterWidth * DisplayScale;
 	}
 
 	int getScreenHeight() const {
-		return EightBit::Display::RasterHeight * DisplayScale;
+		return EightBit::GameBoy::Display::RasterHeight * DisplayScale;
 	}
 
 	void handleKeyDown(SDL_Keycode key);

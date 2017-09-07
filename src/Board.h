@@ -2,31 +2,30 @@
 
 #include <string>
 
-#include "Bus.h"
-#include "Configuration.h"
-#include "LR35902.h"
-#include "Profiler.h"
-#include "Disassembler.h"
+#include <GameBoyBus.h>
+#include <LR35902.h>
+#include <Profiler.h>
+#include <Disassembler.h>
 
-class Board {
+#include "Configuration.h"
+
+class Board : public EightBit::GameBoy::Bus {
 public:
 	Board(const Configuration& configuration);
 
-	EightBit::Bus& BUS() { return m_bus; }
-	EightBit::LR35902& CPU() { return m_cpu; }
+	EightBit::GameBoy::LR35902& CPU() { return m_cpu; }
 
 	void initialise();
 
 private:
 	const Configuration& m_configuration;
-	EightBit::LR35902 m_cpu;
-	EightBit::Bus m_bus;
+	EightBit::GameBoy::LR35902 m_cpu;
 
-	EightBit::Profiler m_profiler;
-	EightBit::Disassembler m_disassembler;
+	EightBit::GameBoy::Profiler m_profiler;
+	EightBit::GameBoy::Disassembler m_disassembler;
 
-	void Cpu_ExecutingInstruction_Debug(const EightBit::LR35902& cpu);
-	void Cpu_ExecutingInstruction_Profile(const EightBit::LR35902& cpu);
+	void Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu);
+	void Cpu_ExecutingInstruction_Profile(const EightBit::GameBoy::LR35902& cpu);
 
 	void Bus_WrittenByte(const EightBit::AddressEventArgs& e);
 };

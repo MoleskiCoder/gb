@@ -2,8 +2,6 @@
 #include "Computer.h"
 #include "CharacterDefinition.h"
 
-#include <map>
-
 Computer::Computer(const Configuration& configuration)
 :	m_configuration(configuration),
 	m_board(configuration),
@@ -12,11 +10,11 @@ Computer::Computer(const Configuration& configuration)
 	m_bitmapTexture(nullptr),
 	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
 	m_pixelFormat(nullptr),
-	m_fps(EightBit::LR35902::framesPerSecond()),
+	m_fps(EightBit::GameBoy::LR35902::framesPerSecond()),
 	m_startTicks(0),
 	m_frames(0),
 	m_vsync(false),
-	m_lcd(&m_colours, m_board.BUS()) {
+	m_lcd(&m_colours, m_board) {
 }
 
 void Computer::initialise() {
@@ -90,7 +88,7 @@ void Computer::configureBackground() const {
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, EightBit::Display::RasterWidth, EightBit::Display::RasterHeight);
+	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, EightBit::GameBoy::Display::RasterWidth, EightBit::GameBoy::Display::RasterHeight);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
@@ -126,7 +124,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		cycles += EightBit::LR35902::cyclesPerFrame();
+		cycles += EightBit::GameBoy::LR35902::cyclesPerFrame();
 
 		cycles -= m_board.CPU().runRasterLines();
 
@@ -157,7 +155,7 @@ void Computer::drawFrame() {
 	
 	m_lcd.render();
 
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), EightBit::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), EightBit::GameBoy::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 
 		"Unable to copy texture to renderer");
