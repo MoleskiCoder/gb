@@ -146,9 +146,61 @@ void Computer::runLoop() {
 }
 
 void Computer::handleKeyDown(SDL_Keycode key) {
+	switch (key) {
+	case SDLK_UP:
+		m_board.pressUp();
+		break;
+	case SDLK_DOWN:
+		m_board.pressDown();
+		break;
+	case SDLK_LEFT:
+		m_board.pressLeft();
+		break;
+	case SDLK_RIGHT:
+		m_board.pressRight();
+		break;
+	case SDLK_z:
+		m_board.pressB();
+		break;
+	case SDLK_x:
+		m_board.pressA();
+		break;
+	case SDLK_BACKSPACE:
+		m_board.pressSelect();
+		break;
+	case SDLK_RETURN:
+		m_board.pressStart();
+		break;
+	}
 }
 
 void Computer::handleKeyUp(SDL_Keycode key) {
+	switch (key) {
+	case SDLK_UP:
+		m_board.releaseUp();
+		break;
+	case SDLK_DOWN:
+		m_board.releaseDown();
+		break;
+	case SDLK_LEFT:
+		m_board.releaseLeft();
+		break;
+	case SDLK_RIGHT:
+		m_board.releaseRight();
+		break;
+	case SDLK_z:
+		m_board.releaseB();
+		break;
+	case SDLK_x:
+		m_board.releaseA();
+		break;
+	case SDLK_BACKSPACE:
+		m_board.releaseSelect();
+		break;
+	case SDLK_RETURN:
+		m_board.releaseStart();
+		break;
+	}
 }
 
 void Computer::drawFrame() {

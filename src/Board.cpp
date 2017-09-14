@@ -15,14 +15,14 @@ void Board::initialise() {
 
 	loadBootRom(romDirectory + "/DMG_ROM.bin");
 
-	//loadGameRom(romDirectory + "/games/Tetris (World).gb");
+	loadGameRom(romDirectory + "/games/Tetris (World).gb");
 	//loadGameRom(romDirectory + "/games/Dr. Mario (V1.0) (JU) [!].gb");
 	//loadGameRom(romDirectory + "/games/Kirby's Dream Land (U) [!].gb");
 
 	//loadGameRom(romDirectory + "/games/opus5.gb");
 	//loadGameRom(romDirectory + "/games/ttt.gb");
 
-	loadGameRom(romDirectory + "/blargg/cpu_instrs.gb");				// Passed
+	//loadGameRom(romDirectory + "/blargg/cpu_instrs.gb");				// Passed
 	//loadGameRom(romDirectory + "/blargg/01-special.gb");				// Passed
 	//loadGameRom(romDirectory + "/blargg/02-interrupts.gb");			// Passed
 	//loadGameRom(romDirectory + "/blargg/03-op sp,hl.gb");				// Passed
