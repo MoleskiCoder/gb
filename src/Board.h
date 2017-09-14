@@ -27,5 +27,5 @@ private:
 	void Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu);
 	void Cpu_ExecutingInstruction_Profile(const EightBit::GameBoy::LR35902& cpu);
 
-	void Bus_WrittenByte(const EightBit::AddressEventArgs& e);
+	void Bus_WrittenByte(uint16_t address);
 };

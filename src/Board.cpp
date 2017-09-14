@@ -22,7 +22,7 @@ void Board::initialise() {
 	//loadGameRom(romDirectory + "/games/opus5.gb");
 	//loadGameRom(romDirectory + "/games/ttt.gb");
 
-	//loadGameRom(romDirectory + "/blargg/cpu_instrs.gb");				// Passed
+	loadGameRom(romDirectory + "/blargg/cpu_instrs.gb");				// Passed
 	//loadGameRom(romDirectory + "/blargg/01-special.gb");				// Passed
 	//loadGameRom(romDirectory + "/blargg/02-interrupts.gb");			// Passed
 	//loadGameRom(romDirectory + "/blargg/03-op sp,hl.gb");				// Passed
@@ -77,7 +77,7 @@ void Board::initialise() {
 
 	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/mem_oam.gb");	// Pass
 	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/reg_f.gb");	// Pass
-	loadGameRom(romDirectory + "/mooneye/acceptance/bits/unused_hwio-GS.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/unused_hwio-GS.gb");	// Pass
 
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/div_write.gb");
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/rapid_toggle.gb");
@@ -121,11 +121,10 @@ void Board::Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu
 			<< '\n';
 }
 
-void Board::Bus_WrittenByte(const EightBit::AddressEventArgs& e) {
-	auto address = e.getAddress();
+void Board::Bus_WrittenByte(const uint16_t address) {
 	switch (address) {
 	case BASE + SB:
-		std::cout << e.getCell();
+		std::cout << DATA();
 		break;
 	}
 }
