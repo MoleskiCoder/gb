@@ -77,7 +77,21 @@ void Board::initialise() {
 
 	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/mem_oam.gb");	// Pass
 	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/reg_f.gb");	// Pass
-	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/unused_hwio-GS.gb");	// Pass
+	//loadGameRom(romDirectory + "/mooneye/acceptance/bits/unused_hwio-GS.gb");
+
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/hblank_ly_scx_timing-GS.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_1_2_timing-GS.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_2_0_timing.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_2_mode0_timing.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_2_mode0_timing_sprites.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_2_mode3_timing.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/intr_2_oam_ok_timing.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/lcdon_timing-dmgABCXmgbS.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/lcdon_write_timing-GS.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/stat_irq_blocking.gb");
+	//loadGameRom(romDirectory + "/mooneye/acceptance/gpu/vblank_stat_intr-GS.gb");
+
+	//loadGameRom(romDirectory + "/mooneye/acceptance/serial/boot_sclk_align-dmgABCXmgb.gb");
 
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/div_write.gb");
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/rapid_toggle.gb");
@@ -92,6 +106,8 @@ void Board::initialise() {
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/tima_reload.gb");
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/tima_write_reloading.gb");
 	//loadGameRom(romDirectory + "/mooneye/acceptance/timer/tma_write_reloading.gb");
+
+	//loadGameRom(romDirectory + "/mooneye/emulator-only/mbc1/multicart_rom_8Mb.gb");
 
 	if (m_configuration.isProfileMode()) {
 		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Profile, this, std::placeholders::_1));
