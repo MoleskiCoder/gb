@@ -10,7 +10,7 @@ Computer::Computer(const Configuration& configuration)
 	m_bitmapTexture(nullptr),
 	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
 	m_pixelFormat(nullptr),
-	m_fps(EightBit::GameBoy::LR35902::framesPerSecond()),
+	m_fps(EightBit::GameBoy::Bus::FramesPerSecond),
 	m_startTicks(0),
 	m_frames(0),
 	m_vsync(false),
@@ -124,7 +124,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		cycles += EightBit::GameBoy::LR35902::cyclesPerFrame();
+		cycles += EightBit::GameBoy::Bus::CyclesPerFrame;
 
 		cycles -= m_board.CPU().runRasterLines();
 

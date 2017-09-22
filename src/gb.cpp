@@ -13,6 +13,7 @@ int main(int, char*[])
 #endif
 	//configuration.setDebugMode(true);
 	//configuration.setProfileMode(true);
+	//configuration.setDrawGraphics(false);
 
 	Computer computer(configuration);
 	computer.initialise();
