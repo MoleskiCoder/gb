@@ -31,6 +31,12 @@ public:
 		}
 	}
 
+	static void verifyAudioCall(const std::string& context, blargg_err_t error) {
+		if (error != nullptr) {
+			throw std::runtime_error(context + std::string(": ") + error);
+		}
+	}
+
 	Computer(const Configuration& configuration);
 
 	void runLoop();
