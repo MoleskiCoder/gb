@@ -259,12 +259,15 @@ void Computer::Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu) {
 }
 
 void Computer::initialiseAudio() {
-	blargg_err_t error = m_audioMixBuffer.set_sample_rate(44100);
+
+	blargg_err_t error = m_audioMixBuffer.set_sample_rate(AudioSampleRate);
 	//if (error)
 	//	report_error(error);
 
-	m_audioMixBuffer.clock_rate(4194304);
+	m_audioMixBuffer.clock_rate(EightBit::GameBoy::Bus::CyclesPerSecond);
 	m_apu.output(m_audioMixBuffer.center(), m_audioMixBuffer.left(), m_audioMixBuffer.right());
+
+	m_audioQueue.start(AudioSampleRate, 2);
 }
 
 void Computer::endAudioframe(int length)
@@ -275,8 +278,8 @@ void Computer::endAudioframe(int length)
 	// Read some samples out of Blip_Buffer if there are enough to
 	// fill our output buffer
 	if (m_audioMixBuffer.samples_avail() >= AudioOutputBufferSize) {
-		size_t count = m_audioMixBuffer.read_samples(&m_audioOutputBuffer[0], AudioOutputBufferSize);
-		// Play samples
-		//play_samples( out_buf, count );
+		auto outputBuffer = &m_audioOutputBuffer[0];
+		size_t count = m_audioMixBuffer.read_samples(outputBuffer, AudioOutputBufferSize);
+		m_audioQueue.write(outputBuffer, count);
 	}
 }

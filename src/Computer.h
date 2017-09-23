@@ -8,6 +8,7 @@
 
 #include <gb_apu/Gb_Apu.h>
 #include <gb_apu/Multi_Buffer.h>
+#include <Sound_Queue.h>
 
 #include <Display.h>
 
@@ -54,9 +55,10 @@ private:
 
 	EightBit::GameBoy::Display m_lcd;
 
-	enum { AudioOutputBufferSize = 4096 };
+	enum { AudioOutputBufferSize = 4096, AudioSampleRate = 44100 };
 
 	Gb_Apu m_apu;
+	Sound_Queue m_audioQueue;
 	Stereo_Buffer m_audioMixBuffer;
 	std::array<blip_sample_t, AudioOutputBufferSize> m_audioOutputBuffer;
 	int m_frameCycles;
