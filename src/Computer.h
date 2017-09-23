@@ -2,8 +2,12 @@
 
 #include <stdexcept>
 #include <string>
+#include <array>
 
 #include <SDL.h>
+
+#include <gb_apu/Gb_Apu.h>
+#include <gb_apu/Multi_Buffer.h>
 
 #include <Display.h>
 
@@ -50,6 +54,13 @@ private:
 
 	EightBit::GameBoy::Display m_lcd;
 
+	enum { AudioOutputBufferSize = 4096 };
+
+	Gb_Apu m_apu;
+	Stereo_Buffer m_audioMixBuffer;
+	std::array<blip_sample_t, AudioOutputBufferSize> m_audioOutputBuffer;
+	int m_frameCycles;
+
 	int m_fps;
 	Uint32 m_startTicks;
 	Uint32 m_frames;
@@ -73,4 +84,12 @@ private:
 
 	static void dumpRendererInformation();
 	static void dumpRendererInformation(::SDL_RendererInfo info);
+
+	void initialiseAudio();
+	void endAudioframe(int length);
+
+	void Bus_ReadingByte(uint16_t address);
+	void Bus_WrittenByte(uint16_t address);
+
+	void Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu);
 };

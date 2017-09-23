@@ -6,6 +6,9 @@
 
 #include <SDL.h>
 
+#include <gb_apu/Gb_Apu.h>
+#include <gb_apu/Multi_Buffer.h>
+
 #include <Display.h>
 #include <AbstractColourPalette.h>
 #include <Bus.h>

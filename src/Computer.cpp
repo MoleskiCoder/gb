@@ -79,6 +79,13 @@ void Computer::initialise() {
 
 	configureBackground();
 	createBitmapTexture();
+
+	m_board.ReadingByte.connect(std::bind(&Computer::Bus_ReadingByte, this, std::placeholders::_1));
+	m_board.WrittenByte.connect(std::bind(&Computer::Bus_WrittenByte, this, std::placeholders::_1));
+
+	m_board.CPU().ExecutedInstruction.connect(std::bind(&Computer::Cpu_ExecutedInstruction, this, std::placeholders::_1));
+
+	initialiseAudio();
 }
 
 void Computer::configureBackground() const {
@@ -126,6 +133,7 @@ void Computer::runLoop() {
 
 		cycles += EightBit::GameBoy::Bus::CyclesPerFrame;
 
+		m_frameCycles = 0;
 		cycles -= m_board.CPU().runRasterLines();
 
 		if (graphics) {
@@ -142,6 +150,7 @@ void Computer::runLoop() {
 		}
 
 		cycles -= m_board.CPU().runVerticalBlankLines();
+		endAudioframe(m_frameCycles);
 	}
 }
 
@@ -230,4 +239,44 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	int vsync = (flags & SDL_RENDERER_PRESENTVSYNC) != 0;
 	int targetTexture = (flags & SDL_RENDERER_TARGETTEXTURE) != 0;
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
+}
+
+void Computer::Bus_ReadingByte(const uint16_t address) {
+	if (address >= m_apu.start_addr && address <= m_apu.end_addr) {
+		auto value = m_apu.read_register(m_frameCycles, address);
+		m_board.poke(address, value);
+	}
+}
+
+void Computer::Bus_WrittenByte(const uint16_t address) {
+	auto data = m_board.DATA();
+	if (address > m_apu.start_addr && address <= m_apu.end_addr)
+		m_apu.write_register(m_frameCycles, address, data);
+}
+
+void Computer::Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu) {
+	m_frameCycles += cpu.clockCycles();
+}
+
+void Computer::initialiseAudio() {
+	blargg_err_t error = m_audioMixBuffer.set_sample_rate(44100);
+	//if (error)
+	//	report_error(error);
+
+	m_audioMixBuffer.clock_rate(4194304);
+	m_apu.output(m_audioMixBuffer.center(), m_audioMixBuffer.left(), m_audioMixBuffer.right());
+}
+
+void Computer::endAudioframe(int length)
+{
+	bool stereo = m_apu.end_frame(length);
+	m_audioMixBuffer.end_frame(length, stereo);
+
+	// Read some samples out of Blip_Buffer if there are enough to
+	// fill our output buffer
+	if (m_audioMixBuffer.samples_avail() >= AudioOutputBufferSize) {
+		size_t count = m_audioMixBuffer.read_samples(&m_audioOutputBuffer[0], AudioOutputBufferSize);
+		// Play samples
+		//play_samples( out_buf, count );
+	}
 }
