@@ -22,7 +22,6 @@
     <ProjectGuid>{F87B618C-5321-4A37-9475-07E606C742A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>zx81</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>gb</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -178,6 +177,9 @@
     </ProjectReference>
     <ProjectReference Include="..\libraries\EightBit\src\EightBit.vcxproj">
       <Project>{a9c24bd9-0cb4-4c84-b09b-46b815f9da47}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libraries\Gb_Snd_Emu\Gb_Snd_Emu.vcxproj">
+      <Project>{289d5d5c-3845-44bc-9983-d5162dcec74e}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

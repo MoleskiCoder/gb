@@ -1,3 +1,6 @@
 [submodule "libraries/EightBit"]
 	path = libraries/EightBit
 	url = https://github.com/MoleskiCoder/EightBit.git
+[submodule "libraries/Gb_Snd_Emu"]
+	path = libraries/Gb_Snd_Emu
+	url = https://github.com/MoleskiCoder/Gb_Snd_Emu.git
