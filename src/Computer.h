@@ -14,7 +14,6 @@
 
 #include "Board.h"
 #include "ColourPalette.h"
-#include "AudioDevice.h"
 
 class Configuration;
 
@@ -50,7 +49,6 @@ private:
 	const Configuration& m_configuration;
 	mutable Board m_board;
 	ColourPalette m_colours;
-	AudioDevice m_audioDevice;
 
 	SDL_Window* m_window;
 	SDL_Renderer* m_renderer;
