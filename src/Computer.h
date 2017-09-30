@@ -97,5 +97,7 @@ private:
 	void Bus_ReadingByte(uint16_t address);
 	void Bus_WrittenByte(uint16_t address);
 
+	void Bus_InterruptGenerated(int cause);
+
 	void Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu);
 };

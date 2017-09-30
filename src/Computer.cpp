@@ -85,6 +85,8 @@ void Computer::initialise() {
 
 	m_board.CPU().ExecutedInstruction.connect(std::bind(&Computer::Cpu_ExecutedInstruction, this, std::placeholders::_1));
 
+	m_board.InterruptGenerated.connect(std::bind(&Computer::Bus_InterruptGenerated, this, std::placeholders::_1));
+
 	initialiseAudio();
 }
 
@@ -213,9 +215,6 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 }
 
 void Computer::drawFrame() {
-	
-	m_lcd.render();
-
 	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), EightBit::GameBoy::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 
@@ -252,6 +251,22 @@ void Computer::Bus_WrittenByte(const uint16_t address) {
 	auto data = m_board.DATA();
 	if (address > m_apu.start_addr && address <= m_apu.end_addr)
 		m_apu.write_register(m_frameCycles, address, data);
+}
+
+void Computer::Bus_InterruptGenerated(int cause) {
+	switch (cause) {
+	case EightBit::GameBoy::Bus::Interrupts::VerticalBlank:
+		m_lcd.render();
+		break;
+	case EightBit::GameBoy::Bus::Interrupts::DisplayControlStatus:
+		break;
+	case EightBit::GameBoy::Bus::Interrupts::TimerOverflow:
+		break;
+	case EightBit::GameBoy::Bus::Interrupts::SerialTransfer:
+		break;
+	case EightBit::GameBoy::Bus::Interrupts::KeypadPressed:
+		break;
+	}
 }
 
 void Computer::Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu) {
