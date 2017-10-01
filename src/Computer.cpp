@@ -85,7 +85,7 @@ void Computer::initialise() {
 
 	m_board.CPU().ExecutedInstruction.connect(std::bind(&Computer::Cpu_ExecutedInstruction, this, std::placeholders::_1));
 
-	m_board.InterruptGenerated.connect(std::bind(&Computer::Bus_InterruptGenerated, this, std::placeholders::_1));
+	m_board.DisplayStatusModeUpdated.connect(std::bind(&Computer::Bus_DisplayStatusModeUpdated, this, std::placeholders::_1));
 
 	initialiseAudio();
 }
@@ -253,18 +253,17 @@ void Computer::Bus_WrittenByte(const uint16_t address) {
 		m_apu.write_register(m_frameCycles, address, data);
 }
 
-void Computer::Bus_InterruptGenerated(int cause) {
-	switch (cause) {
-	case EightBit::GameBoy::Bus::Interrupts::VerticalBlank:
+void Computer::Bus_DisplayStatusModeUpdated(int mode) {
+	switch (m_board.peekRegister(EightBit::GameBoy::Bus::STAT) & EightBit::Processor::Mask3) {
+	case EightBit::GameBoy::Bus::LcdStatusMode::HBlank:
+		break;
+	case EightBit::GameBoy::Bus::LcdStatusMode::VBlank:
+		m_lcd.loadObjectAttributes();
 		m_lcd.render();
 		break;
-	case EightBit::GameBoy::Bus::Interrupts::DisplayControlStatus:
+	case EightBit::GameBoy::Bus::LcdStatusMode::SearchingOamRam:
 		break;
-	case EightBit::GameBoy::Bus::Interrupts::TimerOverflow:
-		break;
-	case EightBit::GameBoy::Bus::Interrupts::SerialTransfer:
-		break;
-	case EightBit::GameBoy::Bus::Interrupts::KeypadPressed:
+	case EightBit::GameBoy::Bus::LcdStatusMode::TransferringDataToLcd:
 		break;
 	}
 }
