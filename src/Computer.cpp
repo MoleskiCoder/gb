@@ -10,11 +10,12 @@ Computer::Computer(const Configuration& configuration)
 	m_bitmapTexture(nullptr),
 	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
 	m_pixelFormat(nullptr),
+	m_lcd(&m_colours, m_board),
+	m_frameCycles(0),
 	m_fps(EightBit::GameBoy::Bus::FramesPerSecond),
 	m_startTicks(0),
 	m_frames(0),
-	m_vsync(false),
-	m_lcd(&m_colours, m_board) {
+	m_vsync(false) {
 }
 
 void Computer::initialise() {
