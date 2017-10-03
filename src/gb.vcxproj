@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F87B618C-5321-4A37-9475-07E606C742A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>zx81</RootNamespace>
+    <RootNamespace>gb</RootNamespace>
     <ProjectName>gb</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
