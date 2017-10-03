@@ -44,6 +44,8 @@ public:
 private:
 	enum {
 		DisplayScale = 2,
+		ScreenWidth = EightBit::GameBoy::Display::RasterWidth * DisplayScale,
+		ScreenHeight = EightBit::GameBoy::Display::RasterHeight * DisplayScale,
 	};
 
 	const Configuration& m_configuration;
@@ -76,14 +78,6 @@ private:
 
 	void configureBackground() const;
 	void createBitmapTexture();
-
-	int getScreenWidth() const {
-		return EightBit::GameBoy::Display::RasterWidth * DisplayScale;
-	}
-
-	int getScreenHeight() const {
-		return EightBit::GameBoy::Display::RasterHeight * DisplayScale;
-	}
 
 	void handleKeyDown(SDL_Keycode key);
 	void handleKeyUp(SDL_Keycode key);

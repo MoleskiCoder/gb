@@ -24,13 +24,10 @@ void Computer::initialise() {
 
 	m_board.initialise();
 
-	auto windowWidth = getScreenWidth();
-	auto windowHeight = getScreenHeight();
-
 	m_window = ::SDL_CreateWindow(
 		"GameBoy",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		windowWidth, windowHeight,
+		ScreenWidth, ScreenHeight,
 		SDL_WINDOW_SHOWN);
 
 	if (m_window == nullptr) {
@@ -259,12 +256,12 @@ void Computer::Bus_DisplayStatusModeUpdated(int mode) {
 	case EightBit::GameBoy::Bus::LcdStatusMode::HBlank:
 		break;
 	case EightBit::GameBoy::Bus::LcdStatusMode::VBlank:
-		m_lcd.loadObjectAttributes();
-		m_lcd.render();
 		break;
 	case EightBit::GameBoy::Bus::LcdStatusMode::SearchingOamRam:
+		m_lcd.loadObjectAttributes();
 		break;
 	case EightBit::GameBoy::Bus::LcdStatusMode::TransferringDataToLcd:
+		m_lcd.render();
 		break;
 	}
 }
