@@ -10,7 +10,7 @@ Computer::Computer(const Configuration& configuration)
 	m_bitmapTexture(nullptr),
 	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
 	m_pixelFormat(nullptr),
-	m_lcd(&m_colours, m_board),
+	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()),
 	m_frameCycles(0),
 	m_fps(EightBit::GameBoy::Bus::FramesPerSecond),
 	m_startTicks(0),
@@ -83,7 +83,7 @@ void Computer::initialise() {
 
 	m_board.CPU().ExecutedInstruction.connect(std::bind(&Computer::Cpu_ExecutedInstruction, this, std::placeholders::_1));
 
-	m_board.DisplayStatusModeUpdated.connect(std::bind(&Computer::Bus_DisplayStatusModeUpdated, this, std::placeholders::_1));
+	m_board.IO().DisplayStatusModeUpdated.connect(std::bind(&Computer::Bus_DisplayStatusModeUpdated, this, std::placeholders::_1));
 
 	initialiseAudio();
 }
@@ -157,28 +157,28 @@ void Computer::runLoop() {
 void Computer::handleKeyDown(SDL_Keycode key) {
 	switch (key) {
 	case SDLK_UP:
-		m_board.pressUp();
+		m_board.IO().pressUp();
 		break;
 	case SDLK_DOWN:
-		m_board.pressDown();
+		m_board.IO().pressDown();
 		break;
 	case SDLK_LEFT:
-		m_board.pressLeft();
+		m_board.IO().pressLeft();
 		break;
 	case SDLK_RIGHT:
-		m_board.pressRight();
+		m_board.IO().pressRight();
 		break;
 	case SDLK_z:
-		m_board.pressB();
+		m_board.IO().pressB();
 		break;
 	case SDLK_x:
-		m_board.pressA();
+		m_board.IO().pressA();
 		break;
 	case SDLK_BACKSPACE:
-		m_board.pressSelect();
+		m_board.IO().pressSelect();
 		break;
 	case SDLK_RETURN:
-		m_board.pressStart();
+		m_board.IO().pressStart();
 		break;
 	}
 }
@@ -186,28 +186,28 @@ void Computer::handleKeyDown(SDL_Keycode key) {
 void Computer::handleKeyUp(SDL_Keycode key) {
 	switch (key) {
 	case SDLK_UP:
-		m_board.releaseUp();
+		m_board.IO().releaseUp();
 		break;
 	case SDLK_DOWN:
-		m_board.releaseDown();
+		m_board.IO().releaseDown();
 		break;
 	case SDLK_LEFT:
-		m_board.releaseLeft();
+		m_board.IO().releaseLeft();
 		break;
 	case SDLK_RIGHT:
-		m_board.releaseRight();
+		m_board.IO().releaseRight();
 		break;
 	case SDLK_z:
-		m_board.releaseB();
+		m_board.IO().releaseB();
 		break;
 	case SDLK_x:
-		m_board.releaseA();
+		m_board.IO().releaseA();
 		break;
 	case SDLK_BACKSPACE:
-		m_board.releaseSelect();
+		m_board.IO().releaseSelect();
 		break;
 	case SDLK_RETURN:
-		m_board.releaseStart();
+		m_board.IO().releaseStart();
 		break;
 	}
 }
@@ -252,15 +252,15 @@ void Computer::Bus_WrittenByte(const uint16_t address) {
 }
 
 void Computer::Bus_DisplayStatusModeUpdated(int mode) {
-	switch (m_board.peekRegister(EightBit::GameBoy::Bus::STAT) & EightBit::Processor::Mask3) {
-	case EightBit::GameBoy::Bus::LcdStatusMode::HBlank:
+	switch (m_board.IO().peek(EightBit::GameBoy::IoRegisters::STAT) & EightBit::Processor::Mask3) {
+	case EightBit::GameBoy::IoRegisters::LcdStatusMode::HBlank:
 		break;
-	case EightBit::GameBoy::Bus::LcdStatusMode::VBlank:
+	case EightBit::GameBoy::IoRegisters::LcdStatusMode::VBlank:
 		break;
-	case EightBit::GameBoy::Bus::LcdStatusMode::SearchingOamRam:
+	case EightBit::GameBoy::IoRegisters::LcdStatusMode::SearchingOamRam:
 		m_lcd.loadObjectAttributes();
 		break;
-	case EightBit::GameBoy::Bus::LcdStatusMode::TransferringDataToLcd:
+	case EightBit::GameBoy::IoRegisters::LcdStatusMode::TransferringDataToLcd:
 		m_lcd.render();
 		break;
 	}

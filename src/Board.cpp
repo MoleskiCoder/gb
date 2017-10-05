@@ -129,7 +129,7 @@ void Board::Cpu_ExecutingInstruction_Profile(const EightBit::GameBoy::LR35902& c
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu) {
-	if (bootRomDisabled())
+	if (IO().bootRomDisabled())
 		std::cerr
 			<< EightBit::GameBoy::Disassembler::state(m_cpu)
 			<< " "
@@ -139,7 +139,7 @@ void Board::Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu
 
 void Board::Bus_WrittenByte(const uint16_t address) {
 	switch (address) {
-	case BASE + SB:
+	case EightBit::GameBoy::IoRegisters::BASE + EightBit::GameBoy::IoRegisters::SB:
 		std::cout << DATA();
 		break;
 	}
