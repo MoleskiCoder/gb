@@ -5,8 +5,7 @@
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
-  m_cpu(EightBit::GameBoy::LR35902(*this)),
-  m_profiler(m_cpu) {
+  m_profiler(CPU()) {
 }
 
 void Board::initialise() {
@@ -110,30 +109,29 @@ void Board::initialise() {
 	//loadGameRom(romDirectory + "/mooneye/emulator-only/mbc1/multicart_rom_8Mb.gb");
 
 	if (m_configuration.isProfileMode()) {
-		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Profile, this, std::placeholders::_1));
+		CPU().ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Profile, this, std::placeholders::_1));
 	}
 
 	if (m_configuration.isDebugMode()) {
-		m_cpu.ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Debug, this, std::placeholders::_1));
+		CPU().ExecutingInstruction.connect(std::bind(&Board::Cpu_ExecutingInstruction_Debug, this, std::placeholders::_1));
 	}
 
 	WrittenByte.connect(std::bind(&Board::Bus_WrittenByte, this, std::placeholders::_1));
 
 	reset();
-	m_cpu.initialise();
 }
 
 void Board::Cpu_ExecutingInstruction_Profile(const EightBit::GameBoy::LR35902& cpu) {
-	const auto pc = m_cpu.PC();
+	const auto pc = CPU().PC();
 	m_profiler.add(pc.word, peek(pc.word));
 }
 
 void Board::Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu) {
 	if (IO().bootRomDisabled())
 		std::cerr
-			<< EightBit::GameBoy::Disassembler::state(m_cpu)
+			<< EightBit::GameBoy::Disassembler::state(CPU())
 			<< " "
-			<< m_disassembler.disassemble(m_cpu)
+			<< m_disassembler.disassemble(CPU())
 			<< '\n';
 }
 
