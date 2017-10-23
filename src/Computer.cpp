@@ -134,7 +134,7 @@ void Computer::runLoop() {
 		cycles += EightBit::GameBoy::Bus::CyclesPerFrame;
 
 		m_frameCycles = 0;
-		cycles -= m_board.CPU().runRasterLines();
+		cycles -= m_board.runRasterLines();
 
 		if (graphics) {
 			drawFrame();
@@ -149,7 +149,7 @@ void Computer::runLoop() {
 			}
 		}
 
-		cycles -= m_board.CPU().runVerticalBlankLines();
+		cycles -= m_board.runVerticalBlankLines();
 		endAudioframe(m_frameCycles);
 	}
 }
