@@ -4,7 +4,7 @@
 
 struct SDL_PixelFormat;
 
-class ColourPalette : public EightBit::GameBoy::AbstractColourPalette {
+class ColourPalette final : public EightBit::GameBoy::AbstractColourPalette {
 public:
 	void load(SDL_PixelFormat* hardware);
 };

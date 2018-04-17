@@ -5,17 +5,11 @@
 Computer::Computer(const Configuration& configuration)
 :	m_configuration(configuration),
 	m_board(configuration),
-	m_window(nullptr),
-	m_renderer(nullptr),
-	m_bitmapTexture(nullptr),
-	m_pixelType(SDL_PIXELFORMAT_ARGB8888),
-	m_pixelFormat(nullptr),
-	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()),
-	m_frameCycles(0),
-	m_fps(EightBit::GameBoy::Bus::FramesPerSecond),
-	m_startTicks(0),
-	m_frames(0),
-	m_vsync(false) {
+	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()) {
+}
+
+void Computer::plug(const std::string& path) {
+	m_board.plug(path);
 }
 
 void Computer::initialise() {
@@ -102,13 +96,14 @@ void Computer::createBitmapTexture() {
 	m_lcd.initialise();
 }
 
-void Computer::runLoop() {
+void Computer::run() {
 
 	m_frames = 0UL;
 	m_startTicks = ::SDL_GetTicks();
 
 	auto& cpu = m_board.CPU();
 
+	m_board.reset();
 	cpu.powerOn();
 
 	auto cycles = 0;
@@ -246,9 +241,8 @@ void Computer::Bus_ReadingByte(const uint16_t address) {
 }
 
 void Computer::Bus_WrittenByte(const uint16_t address) {
-	auto data = m_board.DATA();
 	if (address > m_apu.start_addr && address <= m_apu.end_addr)
-		m_apu.write_register(m_frameCycles, address, data);
+		m_apu.write_register(m_frameCycles, address, m_board.DATA());
 }
 
 void Computer::Bus_DisplayStatusModeUpdated(int mode) {

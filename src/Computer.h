@@ -14,10 +14,9 @@
 
 #include "Board.h"
 #include "ColourPalette.h"
+#include "Configuration.h"
 
-class Configuration;
-
-class Computer {
+class Computer final {
 public:
 
 	static void throwSDLException(std::string failure) {
@@ -38,7 +37,8 @@ public:
 
 	Computer(const Configuration& configuration);
 
-	void runLoop();
+	void run();
+	void plug(const std::string& path);
 	void initialise();
 	
 private:
@@ -52,12 +52,12 @@ private:
 	mutable Board m_board;
 	ColourPalette m_colours;
 
-	SDL_Window* m_window;
-	SDL_Renderer* m_renderer;
+	SDL_Window* m_window = nullptr;
+	SDL_Renderer* m_renderer = nullptr;
 
-	SDL_Texture* m_bitmapTexture;
-	Uint32 m_pixelType;
-	SDL_PixelFormat* m_pixelFormat;
+	SDL_Texture* m_bitmapTexture = nullptr;
+	Uint32 m_pixelType = SDL_PIXELFORMAT_ARGB8888;
+	SDL_PixelFormat* m_pixelFormat = nullptr;
 
 	EightBit::GameBoy::Display m_lcd;
 
@@ -67,12 +67,12 @@ private:
 	Sound_Queue m_audioQueue;
 	Stereo_Buffer m_audioMixBuffer;
 	std::array<blip_sample_t, AudioOutputBufferSize> m_audioOutputBuffer;
-	int m_frameCycles;
+	int m_frameCycles = 0;
 
-	int m_fps;
-	Uint32 m_startTicks;
-	Uint32 m_frames;
-	bool m_vsync;
+	int m_fps = EightBit::GameBoy::Bus::FramesPerSecond;
+	Uint32 m_startTicks = 0;
+	Uint32 m_frames = 0;
+	bool m_vsync = false;
 
 	void drawFrame();
 

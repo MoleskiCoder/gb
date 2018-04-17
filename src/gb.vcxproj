@@ -159,7 +159,6 @@
   <ItemGroup>
     <ClCompile Include="Board.cpp" />
     <ClCompile Include="ColourPalette.cpp" />
-    <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Computer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

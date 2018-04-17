@@ -8,11 +8,12 @@
 
 #include "Configuration.h"
 
-class Board : public EightBit::GameBoy::Bus {
+class Board final : public EightBit::GameBoy::Bus {
 public:
 	Board(const Configuration& configuration);
 
 	void initialise();
+	void plug(const std::string& path);
 
 private:
 	const Configuration& m_configuration;
