@@ -18,7 +18,13 @@
 
 class Computer final {
 public:
+	Computer(const Configuration& configuration);
 
+	void run();
+	void plug(const std::string& path);
+	void initialise();
+	
+private:
 	static void throwSDLException(std::string failure) {
 		throw std::runtime_error(failure + ::SDL_GetError());
 	}
@@ -35,13 +41,6 @@ public:
 		}
 	}
 
-	Computer(const Configuration& configuration);
-
-	void run();
-	void plug(const std::string& path);
-	void initialise();
-	
-private:
 	enum {
 		DisplayScale = 2,
 		ScreenWidth = EightBit::GameBoy::Display::RasterWidth * DisplayScale,
