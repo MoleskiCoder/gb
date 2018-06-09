@@ -93,7 +93,6 @@ void Computer::createBitmapTexture() {
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
-	m_lcd.initialise();
 }
 
 void Computer::run() {
