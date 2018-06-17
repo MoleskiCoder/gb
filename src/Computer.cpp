@@ -232,14 +232,16 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
 }
 
-void Computer::Bus_ReadingByte(const uint16_t address) {
+void Computer::Bus_ReadingByte(const EightBit::EventArgs& e) {
+	const auto address = m_board.ADDRESS().word;
 	if (address >= m_apu.start_addr && address <= m_apu.end_addr) {
 		auto value = m_apu.read_register(m_frameCycles, address);
 		m_board.poke(address, value);
 	}
 }
 
-void Computer::Bus_WrittenByte(const uint16_t address) {
+void Computer::Bus_WrittenByte(const EightBit::EventArgs& e) {
+	const auto address = m_board.ADDRESS().word;
 	if (address > m_apu.start_addr && address <= m_apu.end_addr)
 		m_apu.write_register(m_frameCycles, address, m_board.DATA());
 }

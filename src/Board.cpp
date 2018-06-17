@@ -43,8 +43,8 @@ void Board::Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu
 			<< '\n';
 }
 
-void Board::Bus_WrittenByte(const uint16_t address) {
-	switch (address) {
+void Board::Bus_WrittenByte(const EightBit::EventArgs& e) const {
+	switch (ADDRESS().word) {
 	case EightBit::GameBoy::IoRegisters::BASE + EightBit::GameBoy::IoRegisters::SB:
 		std::cout << DATA();
 		break;
