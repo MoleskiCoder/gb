@@ -5,7 +5,8 @@
 
 Board::Board(const Configuration& configuration)
 : m_configuration(configuration),
-  m_profiler(CPU()) {
+  m_profiler(*this, CPU()),
+  m_disassembler(*this) {
 }
 
 void Board::initialise() {
