@@ -71,22 +71,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_65_1;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_68_0;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Libraries\SDL2-2.0.7\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_65_1;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_68_0;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Libraries\SDL2-2.0.7\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_65_1;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_68_0;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Libraries\SDL2-2.0.7\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_65_1;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\libraries\EightBit\inc;..\libraries\EightBit\LR35902\inc;..\libraries\Gb_Snd_Emu;C:\Libraries\boost_1_68_0;C:\Libraries\SDL2-2.0.7\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Libraries\SDL2-2.0.7\lib\$(PlatformShortName);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
