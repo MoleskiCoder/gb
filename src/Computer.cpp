@@ -6,6 +6,11 @@ Computer::Computer(const Configuration& configuration)
 :	m_configuration(configuration),
 	m_board(configuration),
 	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()) {
+	verifySDLCall(::SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC), "Failed to initialise SDL: ");
+}
+
+Computer::~Computer() {
+    ::SDL_Quit();
 }
 
 void Computer::plug(const std::string& path) {
@@ -14,22 +19,20 @@ void Computer::plug(const std::string& path) {
 
 void Computer::initialise() {
 
-	verifySDLCall(::SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC), "Failed to initialise SDL: ");
-
 	m_board.initialise();
 
-	m_window = ::SDL_CreateWindow(
+	m_window.reset(::SDL_CreateWindow(
 		"GameBoy",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		ScreenWidth, ScreenHeight,
-		SDL_WINDOW_SHOWN);
+		SDL_WINDOW_SHOWN), ::SDL_DestroyWindow);
 
 	if (m_window == nullptr) {
 		throwSDLException("Unable to create window: ");
 	}
 
 	::SDL_DisplayMode mode;
-	verifySDLCall(::SDL_GetWindowDisplayMode(m_window, &mode), "Unable to obtain window information");
+	verifySDLCall(::SDL_GetWindowDisplayMode(m_window.get(), &mode), "Unable to obtain window information");
 
 	m_vsync = m_configuration.getVsyncLocked();
 	Uint32 rendererFlags = 0;
@@ -43,7 +46,7 @@ void Computer::initialise() {
 			::SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Display refresh rate is incompatible with required rate (%d)", required);
 		}
 	}
-	m_renderer = ::SDL_CreateRenderer(m_window, -1, rendererFlags);
+	m_renderer.reset(::SDL_CreateRenderer(m_window.get(), -1, rendererFlags), ::SDL_DestroyRenderer);
 	if (m_renderer == nullptr) {
 		throwSDLException("Unable to create renderer: ");
 	}
@@ -52,7 +55,7 @@ void Computer::initialise() {
 	dumpRendererInformation();
 
 	::SDL_RendererInfo info;
-	verifySDLCall(::SDL_GetRendererInfo(m_renderer, &info), "Unable to obtain renderer information");
+	verifySDLCall(::SDL_GetRendererInfo(m_renderer.get(), &info), "Unable to obtain renderer information");
 	::SDL_Log("Using renderer:");
 	dumpRendererInformation(info);
 
@@ -63,11 +66,11 @@ void Computer::initialise() {
 		}
 	}
 
-	m_pixelFormat = ::SDL_AllocFormat(m_pixelType);
+	m_pixelFormat.reset(::SDL_AllocFormat(m_pixelType), ::SDL_FreeFormat);
 	if (m_pixelFormat == nullptr) {
 		throwSDLException("Unable to allocate pixel format: ");
 	}
-	m_colours.load(m_pixelFormat);
+	m_colours.load(m_pixelFormat.get());
 
 	configureBackground();
 	createBitmapTexture();
@@ -84,12 +87,12 @@ void Computer::initialise() {
 
 void Computer::configureBackground() const {
 	Uint8 r, g, b;
-	::SDL_GetRGB(m_colours.getColour(0), m_pixelFormat, &r, &g, &b);
-	verifySDLCall(::SDL_SetRenderDrawColor(m_renderer, r, g, b, SDL_ALPHA_OPAQUE), "Unable to set render draw colour");
+	::SDL_GetRGB(m_colours.getColour(0), m_pixelFormat.get(), &r, &g, &b);
+	verifySDLCall(::SDL_SetRenderDrawColor(m_renderer.get(), r, g, b, SDL_ALPHA_OPAQUE), "Unable to set render draw colour");
 }
 
 void Computer::createBitmapTexture() {
-	m_bitmapTexture = ::SDL_CreateTexture(m_renderer, m_pixelType, SDL_TEXTUREACCESS_STREAMING, EightBit::GameBoy::Display::RasterWidth, EightBit::GameBoy::Display::RasterHeight);
+	m_bitmapTexture.reset(::SDL_CreateTexture(m_renderer.get(), m_pixelType, SDL_TEXTUREACCESS_STREAMING, EightBit::GameBoy::Display::RasterWidth, EightBit::GameBoy::Display::RasterHeight), ::SDL_DestroyTexture);
 	if (m_bitmapTexture == nullptr) {
 		throwSDLException("Unable to create bitmap texture");
 	}
@@ -132,7 +135,7 @@ void Computer::run() {
 
 		if (graphics) {
 			drawFrame();
-			::SDL_RenderPresent(m_renderer);
+			::SDL_RenderPresent(m_renderer.get());
 			if (!m_vsync) {
 				const auto elapsedTicks = ::SDL_GetTicks() - m_startTicks;
 				const auto neededTicks = (++m_frames / (float)m_fps) * 1000.0;
@@ -207,9 +210,9 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 }
 
 void Computer::drawFrame() {
-	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture, NULL, &(m_lcd.pixels()[0]), EightBit::GameBoy::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
+	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture.get(), NULL, &(m_lcd.pixels()[0]), EightBit::GameBoy::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
 	verifySDLCall(
-		::SDL_RenderCopy(m_renderer, m_bitmapTexture, nullptr, nullptr), 
+		::SDL_RenderCopy(m_renderer.get(), m_bitmapTexture.get(), nullptr, nullptr), 
 		"Unable to copy texture to renderer");
 }
 

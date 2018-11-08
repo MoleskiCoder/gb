@@ -19,6 +19,7 @@
 class Computer final {
 public:
 	Computer(const Configuration& configuration);
+	~Computer();
 
 	void run();
 	void plug(const std::string& path);
@@ -51,12 +52,11 @@ private:
 	mutable Board m_board;
 	ColourPalette m_colours;
 
-	SDL_Window* m_window = nullptr;
-	SDL_Renderer* m_renderer = nullptr;
-
-	SDL_Texture* m_bitmapTexture = nullptr;
+	std::shared_ptr<SDL_Window> m_window;
+	std::shared_ptr<SDL_Renderer> m_renderer;
+	std::shared_ptr<SDL_PixelFormat> m_pixelFormat;
+	std::shared_ptr<SDL_Texture> m_bitmapTexture;
 	Uint32 m_pixelType = SDL_PIXELFORMAT_ARGB8888;
-	SDL_PixelFormat* m_pixelFormat = nullptr;
 
 	EightBit::GameBoy::Display m_lcd;
 
