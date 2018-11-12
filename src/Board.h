@@ -12,8 +12,10 @@ class Board final : public EightBit::GameBoy::Bus {
 public:
 	Board(const Configuration& configuration);
 
-	void initialise();
 	void plug(const std::string& path);
+
+protected:
+	virtual void initialise() final;
 
 private:
 	const Configuration& m_configuration;

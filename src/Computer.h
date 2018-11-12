@@ -23,7 +23,9 @@ public:
 
 	void run();
 	void plug(const std::string& path);
-	void initialise();
+
+	void powerOn();
+	void powerOff();
 	
 private:
 	static void throwSDLException(std::string failure) {

@@ -17,9 +17,9 @@ void Computer::plug(const std::string& path) {
 	m_board.plug(path);
 }
 
-void Computer::initialise() {
+void Computer::powerOn() {
 
-	m_board.initialise();
+	m_board.powerOn();
 
 	m_window.reset(::SDL_CreateWindow(
 		"GameBoy",
@@ -83,6 +83,12 @@ void Computer::initialise() {
 	m_board.IO().DisplayStatusModeUpdated.connect(std::bind(&Computer::Bus_DisplayStatusModeUpdated, this, std::placeholders::_1));
 
 	initialiseAudio();
+
+	m_frames = 0UL;
+	m_startTicks = ::SDL_GetTicks();
+}
+
+void powerOff() {
 }
 
 void Computer::configureBackground() const {
@@ -100,18 +106,11 @@ void Computer::createBitmapTexture() {
 
 void Computer::run() {
 
-	m_frames = 0UL;
-	m_startTicks = ::SDL_GetTicks();
-
-	auto& cpu = m_board.CPU();
-
-	m_board.reset();
-	cpu.powerOn();
-
 	auto cycles = 0;
 
 	auto graphics = m_configuration.isDrawGraphics();
 
+	auto& cpu = m_board.CPU();
 	while (cpu.powered()) {
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {

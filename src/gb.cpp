@@ -13,7 +13,6 @@ int main(int, char*[])
 #endif
 
 	Computer computer(configuration);
-	computer.initialise();
 
 	//computer.plug("jmla09.gb");
 
@@ -111,6 +110,7 @@ int main(int, char*[])
 
 	//computer.plug("mooneye/emulator-only/mbc1/multicart_rom_8Mb.gb");
 
+	computer.powerOn();
 	try {
 		computer.run();
 	} catch (const std::exception& error) {
