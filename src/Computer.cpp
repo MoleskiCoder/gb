@@ -75,12 +75,38 @@ void Computer::powerOn() {
 	configureBackground();
 	createBitmapTexture();
 
-	m_board.ReadingByte.connect(std::bind(&Computer::Bus_ReadingByte, this, std::placeholders::_1));
-	m_board.WrittenByte.connect(std::bind(&Computer::Bus_WrittenByte, this, std::placeholders::_1));
+	m_board.ReadingByte.connect([this] (const EightBit::EventArgs&) {
+		const auto address = m_board.ADDRESS().word;
+		if (address >= m_apu.start_addr && address <= m_apu.end_addr) {
+			auto value = m_apu.read_register(m_frameCycles, address);
+			m_board.poke(address, value);
+		}
+	});
 
-	m_board.CPU().ExecutedInstruction.connect(std::bind(&Computer::Cpu_ExecutedInstruction, this, std::placeholders::_1));
+	m_board.WrittenByte.connect([this] (const EightBit::EventArgs&) {
+		const auto address = m_board.ADDRESS().word;
+		if (address > m_apu.start_addr && address <= m_apu.end_addr)
+			m_apu.write_register(m_frameCycles, address, m_board.DATA());
+	});
 
-	m_board.IO().DisplayStatusModeUpdated.connect(std::bind(&Computer::Bus_DisplayStatusModeUpdated, this, std::placeholders::_1));
+	m_board.CPU().ExecutedInstruction.connect([this] (const EightBit::GameBoy::LR35902& cpu) {
+		m_frameCycles += cpu.clockCycles();
+	});
+
+	m_board.IO().DisplayStatusModeUpdated.connect([this] (const int mode) {
+		switch (mode & EightBit::Processor::Mask3) {
+		case EightBit::GameBoy::IoRegisters::LcdStatusMode::HBlank:
+			break;
+		case EightBit::GameBoy::IoRegisters::LcdStatusMode::VBlank:
+			break;
+		case EightBit::GameBoy::IoRegisters::LcdStatusMode::SearchingOamRam:
+			m_lcd.loadObjectAttributes();
+			break;
+		case EightBit::GameBoy::IoRegisters::LcdStatusMode::TransferringDataToLcd:
+			m_lcd.render();
+			break;
+		}
+	});
 
 	initialiseAudio();
 
@@ -88,7 +114,8 @@ void Computer::powerOn() {
 	m_startTicks = ::SDL_GetTicks();
 }
 
-void powerOff() {
+void Computer::powerOff() {
+	m_board.powerOff();
 }
 
 void Computer::configureBackground() const {
@@ -116,7 +143,7 @@ void Computer::run() {
 		while (::SDL_PollEvent(&e)) {
 			switch (e.type) {
 			case SDL_QUIT:
-				cpu.powerOff();
+				powerOff();
 				break;
 			case SDL_KEYDOWN:
 				handleKeyDown(e.key.keysym.sym);
@@ -232,39 +259,6 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 	int vsync = (flags & SDL_RENDERER_PRESENTVSYNC) != 0;
 	int targetTexture = (flags & SDL_RENDERER_TARGETTEXTURE) != 0;
 	::SDL_Log("%s: software=%d, accelerated=%d, vsync=%d, target texture=%d", name, software, accelerated, vsync, targetTexture);
-}
-
-void Computer::Bus_ReadingByte(const EightBit::EventArgs& e) {
-	const auto address = m_board.ADDRESS().word;
-	if (address >= m_apu.start_addr && address <= m_apu.end_addr) {
-		auto value = m_apu.read_register(m_frameCycles, address);
-		m_board.poke(address, value);
-	}
-}
-
-void Computer::Bus_WrittenByte(const EightBit::EventArgs& e) {
-	const auto address = m_board.ADDRESS().word;
-	if (address > m_apu.start_addr && address <= m_apu.end_addr)
-		m_apu.write_register(m_frameCycles, address, m_board.DATA());
-}
-
-void Computer::Bus_DisplayStatusModeUpdated(int mode) {
-	switch (m_board.IO().peek(EightBit::GameBoy::IoRegisters::STAT) & EightBit::Processor::Mask3) {
-	case EightBit::GameBoy::IoRegisters::LcdStatusMode::HBlank:
-		break;
-	case EightBit::GameBoy::IoRegisters::LcdStatusMode::VBlank:
-		break;
-	case EightBit::GameBoy::IoRegisters::LcdStatusMode::SearchingOamRam:
-		m_lcd.loadObjectAttributes();
-		break;
-	case EightBit::GameBoy::IoRegisters::LcdStatusMode::TransferringDataToLcd:
-		m_lcd.render();
-		break;
-	}
-}
-
-void Computer::Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu) {
-	m_frameCycles += cpu.clockCycles();
 }
 
 void Computer::initialiseAudio() {

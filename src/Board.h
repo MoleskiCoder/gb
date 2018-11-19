@@ -20,11 +20,6 @@ protected:
 private:
 	const Configuration& m_configuration;
 
-	EightBit::GameBoy::Profiler m_profiler;
-	EightBit::GameBoy::Disassembler m_disassembler;
-
-	void Cpu_ExecutingInstruction_Debug(const EightBit::GameBoy::LR35902& cpu);
-	void Cpu_ExecutingInstruction_Profile(const EightBit::GameBoy::LR35902& cpu);
-
-	void Bus_WrittenByte(const EightBit::EventArgs& e) const;
+	EightBit::GameBoy::Profiler m_profiler = { *this, CPU() };
+	EightBit::GameBoy::Disassembler m_disassembler = *this;
 };

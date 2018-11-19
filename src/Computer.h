@@ -88,10 +88,4 @@ private:
 
 	void initialiseAudio();
 	void endAudioframe(int length);
-
-	void Bus_ReadingByte(const EightBit::EventArgs& e);
-	void Bus_WrittenByte(const EightBit::EventArgs& e);
-	void Bus_DisplayStatusModeUpdated(int mode);
-
-	void Cpu_ExecutedInstruction(const EightBit::GameBoy::LR35902& cpu);
 };
