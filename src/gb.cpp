@@ -110,7 +110,7 @@ int main(int, char*[])
 
 	//computer.plug("mooneye/emulator-only/mbc1/multicart_rom_8Mb.gb");
 
-	computer.powerOn();
+	computer.raisePOWER();
 	try {
 		computer.run();
 	} catch (const std::exception& error) {

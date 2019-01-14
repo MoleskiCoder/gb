@@ -13,8 +13,6 @@ public:
 	Board(const Configuration& configuration);
 
 	void plug(const std::string& path);
-
-protected:
 	virtual void initialise() final;
 
 private:

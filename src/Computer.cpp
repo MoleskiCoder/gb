@@ -17,9 +17,10 @@ void Computer::plug(const std::string& path) {
 	m_board.plug(path);
 }
 
-void Computer::powerOn() {
+void Computer::raisePOWER() {
 
-	m_board.powerOn();
+	m_board.raisePOWER();
+	m_board.initialise();
 
 	m_window.reset(::SDL_CreateWindow(
 		"GameBoy",
@@ -114,8 +115,8 @@ void Computer::powerOn() {
 	m_startTicks = ::SDL_GetTicks();
 }
 
-void Computer::powerOff() {
-	m_board.powerOff();
+void Computer::lowerPOWER() {
+	m_board.lowerPOWER();
 }
 
 void Computer::configureBackground() const {
@@ -143,7 +144,7 @@ void Computer::run() {
 		while (::SDL_PollEvent(&e)) {
 			switch (e.type) {
 			case SDL_QUIT:
-				powerOff();
+				lowerPOWER();
 				break;
 			case SDL_KEYDOWN:
 				handleKeyDown(e.key.keysym.sym);
