@@ -75,7 +75,8 @@ private:
 	Uint32 m_frames = 0;
 	bool m_vsync = false;
 
-	void drawFrame();
+	void updateTexture();
+	void displayTexture();
 
 	void configureBackground() const;
 	void createBitmapTexture();

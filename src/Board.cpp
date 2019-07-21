@@ -9,13 +9,6 @@ Board::Board(const Configuration& configuration)
 
 void Board::initialise() {
 
-	if (m_configuration.isProfileMode()) {
-		CPU().ExecutingInstruction.connect([this] (const EightBit::GameBoy::LR35902& cpu) {
-			const auto pc = CPU().PC().word;
-			m_profiler.add(pc, peek(pc));
-		});
-	}
-
 	if (m_configuration.isDebugMode()) {
 		CPU().ExecutingInstruction.connect([this] (const EightBit::GameBoy::LR35902&) {
 			if (IO().bootRomDisabled())

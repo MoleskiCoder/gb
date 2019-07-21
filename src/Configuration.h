@@ -14,14 +14,6 @@ public:
 		m_debugMode = value;
 	}
 
-	bool isProfileMode() const {
-		return m_profileMode;
-	}
-
-	void setProfileMode(bool value) {
-		m_profileMode = value;
-	}
-
 	bool isDrawGraphics() const {
 		return m_drawGraphics;
 	}
@@ -44,7 +36,6 @@ public:
 
 private:
 	bool m_debugMode = false;
-	bool m_profileMode = false;
 	bool m_drawGraphics = true;
 	bool m_vsyncLocked = true;
 	std::string m_romDirectory = "roms";

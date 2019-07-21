@@ -161,8 +161,8 @@ void Computer::run() {
 		cycles -= m_board.runRasterLines();
 
 		if (graphics) {
-			drawFrame();
-			::SDL_RenderPresent(m_renderer.get());
+			updateTexture();
+			displayTexture();
 			if (!m_vsync) {
 				const auto elapsedTicks = ::SDL_GetTicks() - m_startTicks;
 				const auto neededTicks = (++m_frames / (float)m_fps) * 1000.0;
@@ -236,11 +236,15 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 	}
 }
 
-void Computer::drawFrame() {
+void Computer::updateTexture() {
 	verifySDLCall(::SDL_UpdateTexture(m_bitmapTexture.get(), NULL, &(m_lcd.pixels()[0]), EightBit::GameBoy::Display::RasterWidth * sizeof(Uint32)), "Unable to update texture: ");
+}
+
+void Computer::displayTexture() {
 	verifySDLCall(
 		::SDL_RenderCopy(m_renderer.get(), m_bitmapTexture.get(), nullptr, nullptr), 
 		"Unable to copy texture to renderer");
+	::SDL_RenderPresent(m_renderer.get());
 }
 
 void Computer::dumpRendererInformation() {
