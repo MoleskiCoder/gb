@@ -14,7 +14,7 @@ public:
 		m_debugMode = value;
 	}
 
-	bool isDrawGraphics() const {
+	bool shouldDrawGraphics() const {
 		return m_drawGraphics;
 	}
 

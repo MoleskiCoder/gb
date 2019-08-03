@@ -10,7 +10,7 @@ Computer::Computer(const Configuration& configuration)
 }
 
 Computer::~Computer() {
-    ::SDL_Quit();
+	::SDL_Quit();
 }
 
 void Computer::plug(const std::string& path) {
@@ -94,6 +94,11 @@ void Computer::raisePOWER() {
 		m_frameCycles += cpu.clockCycles();
 	});
 
+	initialiseAudio();
+
+	m_frames = 0UL;
+	m_startTicks = ::SDL_GetTicks();
+
 	m_board.IO().DisplayStatusModeUpdated.connect([this] (const int mode) {
 		switch (mode & EightBit::Processor::Mask3) {
 		case EightBit::GameBoy::IoRegisters::LcdStatusMode::HBlank:
@@ -108,11 +113,6 @@ void Computer::raisePOWER() {
 			break;
 		}
 	});
-
-	initialiseAudio();
-
-	m_frames = 0UL;
-	m_startTicks = ::SDL_GetTicks();
 }
 
 void Computer::lowerPOWER() {
@@ -136,10 +136,11 @@ void Computer::run() {
 
 	auto cycles = 0;
 
-	auto graphics = m_configuration.isDrawGraphics();
+	auto graphics = m_configuration.shouldDrawGraphics();
 
 	auto& cpu = m_board.CPU();
 	while (cpu.powered()) {
+
 		::SDL_Event e;
 		while (::SDL_PollEvent(&e)) {
 			switch (e.type) {
