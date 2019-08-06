@@ -9,7 +9,6 @@ int main(int, char*[])
 
 #ifdef _DEBUG
 	configuration.setDebugMode(true);
-	configuration.setProfileMode(true);
 #endif
 
 	Computer computer(configuration);
