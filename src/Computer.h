@@ -2,12 +2,11 @@
 
 #include <stdexcept>
 #include <string>
-#include <array>
+#include <vector>
 
 #include <SDL.h>
 
-#include <gb_apu/Gb_Apu.h>
-#include <gb_apu/Multi_Buffer.h>
+#include <Basic_Gb_Apu.h>
 #include <Sound_Queue.h>
 
 #include <Display.h>
@@ -64,11 +63,9 @@ private:
 
 	enum { AudioOutputBufferSize = 4096, AudioSampleRate = 44100 };
 
-	Gb_Apu m_apu;
+	Basic_Gb_Apu m_apu;
 	Sound_Queue m_audioQueue;
-	Stereo_Buffer m_audioMixBuffer;
-	std::array<blip_sample_t, AudioOutputBufferSize> m_audioOutputBuffer;
-	int m_frameCycles = 0;
+	std::vector<int16_t> m_audioOutputBuffer;
 
 	int m_fps = EightBit::GameBoy::Bus::FramesPerSecond;
 	Uint32 m_startTicks = 0;
@@ -88,5 +85,5 @@ private:
 	static void dumpRendererInformation(::SDL_RendererInfo info);
 
 	void initialiseAudio();
-	void endAudioframe(int length);
+	void endAudioframe();
 };

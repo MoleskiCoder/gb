@@ -5,7 +5,8 @@
 Computer::Computer(const Configuration& configuration)
 :	m_configuration(configuration),
 	m_board(configuration),
-	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()) {
+	m_lcd(&m_colours, m_board, m_board.OAMRAM(), m_board.VRAM()),
+	m_audioOutputBuffer(AudioOutputBufferSize) {
 	verifySDLCall(::SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC), "Failed to initialise SDL: ");
 }
 
@@ -78,20 +79,16 @@ void Computer::raisePOWER() {
 
 	m_board.ReadingByte.connect([this] (const EightBit::EventArgs&) {
 		const auto address = m_board.ADDRESS().word;
-		if (address >= m_apu.start_addr && address <= m_apu.end_addr) {
-			auto value = m_apu.read_register(m_frameCycles, address);
+		if (address >= Gb_Apu::start_addr && address <= Gb_Apu::end_addr) {
+			auto value = m_apu.read_register(address);
 			m_board.poke(address, value);
 		}
 	});
 
 	m_board.WrittenByte.connect([this] (const EightBit::EventArgs&) {
 		const auto address = m_board.ADDRESS().word;
-		if (address > m_apu.start_addr && address <= m_apu.end_addr)
-			m_apu.write_register(m_frameCycles, address, m_board.DATA());
-	});
-
-	m_board.CPU().ExecutedInstruction.connect([this] (const EightBit::GameBoy::LR35902& cpu) {
-		m_frameCycles += cpu.clockCycles();
+		if (address > Gb_Apu::start_addr && address <= Gb_Apu::end_addr)
+			m_apu.write_register(address, m_board.DATA());
 	});
 
 	initialiseAudio();
@@ -100,7 +97,7 @@ void Computer::raisePOWER() {
 	m_startTicks = ::SDL_GetTicks();
 
 	m_board.IO().DisplayStatusModeUpdated.connect([this] (const int mode) {
-		switch (mode & EightBit::Processor::Mask3) {
+		switch (mode & EightBit::Processor::Mask2) {
 		case EightBit::GameBoy::IoRegisters::LcdStatusMode::HBlank:
 			break;
 		case EightBit::GameBoy::IoRegisters::LcdStatusMode::VBlank:
@@ -158,7 +155,6 @@ void Computer::run() {
 
 		cycles += EightBit::GameBoy::Bus::CyclesPerFrame;
 
-		m_frameCycles = 0;
 		cycles -= m_board.runRasterLines();
 
 		if (graphics) {
@@ -175,7 +171,7 @@ void Computer::run() {
 		}
 
 		cycles -= m_board.runVerticalBlankLines();
-		endAudioframe(m_frameCycles);
+		endAudioframe();
 	}
 }
 
@@ -268,23 +264,17 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 }
 
 void Computer::initialiseAudio() {
-
-	verifyAudioCall("Audio: set_sample_rate", m_audioMixBuffer.set_sample_rate(AudioSampleRate));
-
-	m_audioMixBuffer.clock_rate(EightBit::GameBoy::Bus::CyclesPerSecond);
-	m_apu.output(m_audioMixBuffer.center(), m_audioMixBuffer.left(), m_audioMixBuffer.right());
-
+	verifyAudioCall("Audio: set_sample_rate", m_apu.set_sample_rate(AudioSampleRate));
 	verifyAudioCall("Audio: start queue", m_audioQueue.start(AudioSampleRate, 2));
 }
 
-void Computer::endAudioframe(int length) {
+void Computer::endAudioframe() {
 
-	auto stereo = m_apu.end_frame(length);
-	m_audioMixBuffer.end_frame(length, stereo);
+	m_apu.end_frame();
 
-	if (m_audioMixBuffer.samples_avail() >= AudioOutputBufferSize) {
+	if (m_apu.samples_avail() >= AudioOutputBufferSize) {
 		auto outputBuffer = &m_audioOutputBuffer[0];
-		auto count = m_audioMixBuffer.read_samples(outputBuffer, AudioOutputBufferSize);
+		auto count = m_apu.read_samples(m_audioOutputBuffer);
 		m_audioQueue.write(outputBuffer, count);
 	}
 }
