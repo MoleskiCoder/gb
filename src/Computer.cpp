@@ -77,11 +77,11 @@ void Computer::raisePOWER() {
 	configureBackground();
 	createBitmapTexture();
 
-	m_board.ReadingByte.connect([this] (const EightBit::EventArgs&) {
+	m_board.ReadByte.connect([this](const EightBit::EventArgs&) {
 		const auto address = m_board.ADDRESS().word;
 		if (address >= Gb_Apu::start_addr && address <= Gb_Apu::end_addr) {
 			auto value = m_apu.read_register(address);
-			m_board.poke(address, value);
+			m_board.DATA() = value;
 		}
 	});
 
@@ -264,8 +264,8 @@ void Computer::dumpRendererInformation(::SDL_RendererInfo info) {
 }
 
 void Computer::initialiseAudio() {
-	verifyAudioCall("Audio: set_sample_rate", m_apu.set_sample_rate(AudioSampleRate));
-	verifyAudioCall("Audio: start queue", m_audioQueue.start(AudioSampleRate, 2));
+	m_apu.set_sample_rate(AudioSampleRate);
+	m_audioQueue.start(AudioSampleRate, 2);
 }
 
 void Computer::endAudioframe() {

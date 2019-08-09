@@ -37,12 +37,6 @@ private:
 		}
 	}
 
-	static void verifyAudioCall(const std::string& context, blargg_err_t error) {
-		if (error != nullptr) {
-			throw std::runtime_error(context + std::string(": ") + error);
-		}
-	}
-
 	enum {
 		DisplayScale = 2,
 		ScreenWidth = EightBit::GameBoy::Display::RasterWidth * DisplayScale,
