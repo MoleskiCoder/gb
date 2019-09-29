@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29306.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gb", "src\gb.vcxproj", "{F87B618C-5321-4A37-9475-07E606C742A6}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LR35902", "libraries\EightBit\LR35902\src\LR35902.vcxproj", "{7730ECF5-8206-4ECB-BA6B-6B5CFE50CFB2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gb_Snd_Emu", "libraries\Gb_Snd_Emu\Gb_Snd_Emu.vcxproj", "{289D5D5C-3845-44BC-9983-D5162DCEC74E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gaming", "libraries\EightBit\Gaming\src\Gaming.vcxproj", "{BC526300-E3D0-44B1-B57B-312BAA6566AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,14 @@ Global
 		{289D5D5C-3845-44BC-9983-D5162DCEC74E}.Release|x64.Build.0 = Release|x64
 		{289D5D5C-3845-44BC-9983-D5162DCEC74E}.Release|x86.ActiveCfg = Release|Win32
 		{289D5D5C-3845-44BC-9983-D5162DCEC74E}.Release|x86.Build.0 = Release|Win32
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Debug|x64.ActiveCfg = Debug|x64
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Debug|x64.Build.0 = Debug|x64
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Debug|x86.ActiveCfg = Debug|Win32
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Debug|x86.Build.0 = Debug|Win32
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Release|x64.ActiveCfg = Release|x64
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Release|x64.Build.0 = Release|x64
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Release|x86.ActiveCfg = Release|Win32
+		{BC526300-E3D0-44B1-B57B-312BAA6566AC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

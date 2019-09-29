@@ -1,10 +1,10 @@
 #pragma once
 
-#include <stdexcept>
+#include <cstdint>
 #include <string>
 #include <vector>
 
-#include <SDL.h>
+#include <Game.h>
 
 #include <Basic_Gb_Apu.h>
 #include <Sound_Queue.h>
@@ -15,43 +15,38 @@
 #include "ColourPalette.h"
 #include "Configuration.h"
 
-class Computer final {
+class Computer final : public Gaming::Game {
 public:
 	Computer(const Configuration& configuration);
-	~Computer();
+	~Computer() {}
 
-	void run();
 	void plug(const std::string& path);
 
-	void raisePOWER();
-	void lowerPOWER();
+	void raisePOWER() final;
+	void lowerPOWER() final;
 	
+protected:
+	int fps() const noexcept final { return EightBit::GameBoy::Bus::FramesPerSecond; }
+	bool useVsync() const noexcept final { return m_configuration.getVsyncLocked(); }
+
+	int rasterWidth() const noexcept final { return EightBit::GameBoy::Display::RasterWidth; }
+	int rasterHeight() const noexcept final { return EightBit::GameBoy::Display::RasterHeight; }
+	int displayScale() const noexcept final { return 2; }
+
+	std::string title() const noexcept final { return "GameBoy"; }
+
+	const uint32_t* pixels() const noexcept final;
+
+	void handleKeyDown(SDL_Keycode key) final;
+	void handleKeyUp(SDL_Keycode key) final;
+
+	void runRasterLines() final;
+	void runVerticalBlank() final;
+
 private:
-	static void throwSDLException(std::string failure) {
-		throw std::runtime_error(failure + ::SDL_GetError());
-	}
-
-	static void verifySDLCall(int returned, std::string failure) {
-		if (returned < 0) {
-			throwSDLException(failure);
-		}
-	}
-
-	enum {
-		DisplayScale = 2,
-		ScreenWidth = EightBit::GameBoy::Display::RasterWidth * DisplayScale,
-		ScreenHeight = EightBit::GameBoy::Display::RasterHeight * DisplayScale,
-	};
-
 	const Configuration& m_configuration;
 	mutable Board m_board;
 	ColourPalette m_colours;
-
-	std::shared_ptr<SDL_Window> m_window;
-	std::shared_ptr<SDL_Renderer> m_renderer;
-	std::shared_ptr<SDL_PixelFormat> m_pixelFormat;
-	std::shared_ptr<SDL_Texture> m_bitmapTexture;
-	Uint32 m_pixelType = SDL_PIXELFORMAT_ARGB8888;
 
 	EightBit::GameBoy::Display m_lcd;
 
@@ -60,23 +55,6 @@ private:
 	Basic_Gb_Apu m_apu;
 	Sound_Queue m_audioQueue;
 	std::vector<int16_t> m_audioOutputBuffer;
-
-	int m_fps = EightBit::GameBoy::Bus::FramesPerSecond;
-	Uint32 m_startTicks = 0;
-	Uint32 m_frames = 0;
-	bool m_vsync = false;
-
-	void updateTexture();
-	void displayTexture();
-
-	void configureBackground() const;
-	void createBitmapTexture();
-
-	void handleKeyDown(SDL_Keycode key);
-	void handleKeyUp(SDL_Keycode key);
-
-	static void dumpRendererInformation();
-	static void dumpRendererInformation(::SDL_RendererInfo info);
 
 	void initialiseAudio();
 	void endAudioframe();

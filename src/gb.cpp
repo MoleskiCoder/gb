@@ -18,6 +18,7 @@ int main(int, char*[])
 	computer.plug("games/Tetris (World).gb");
 	//computer.plug("games/Dr. Mario (V1.0) (JU) [!].gb");
 	//computer.plug("games/Kirby's Dream Land (U) [!].gb");
+	//computer.plug("games/Aladdin (U) [S][!].gb");
 
 	//computer.plug("games/opus5.gb");
 	//computer.plug("games/ttt.gb");
@@ -111,7 +112,7 @@ int main(int, char*[])
 
 	computer.raisePOWER();
 	try {
-		computer.run();
+		computer.runLoop();
 	} catch (const std::exception& error) {
 		::SDL_LogError(::SDL_LOG_CATEGORY_APPLICATION, "%s", error.what());
 		return 2;
