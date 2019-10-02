@@ -72,7 +72,10 @@ const uint32_t* Computer::pixels() const noexcept {
 	return m_lcd.pixels().data();
 }
 
-void Computer::handleKeyDown(SDL_Keycode key) {
+bool Computer::handleKeyDown(SDL_Keycode key) {
+	const auto handled = Gaming::Game::handleKeyDown(key);
+	if (handled)
+		return true;
 	switch (key) {
 	case SDLK_UP:
 		m_board.IO().pressUp();
@@ -98,10 +101,16 @@ void Computer::handleKeyDown(SDL_Keycode key) {
 	case SDLK_RETURN:
 		m_board.IO().pressStart();
 		break;
+	default:
+		return false;
 	}
+	return true;
 }
 
-void Computer::handleKeyUp(SDL_Keycode key) {
+bool Computer::handleKeyUp(SDL_Keycode key) {
+	const auto handled = Gaming::Game::handleKeyUp(key);
+	if (handled)
+		return true;
 	switch (key) {
 	case SDLK_UP:
 		m_board.IO().releaseUp();
@@ -127,7 +136,10 @@ void Computer::handleKeyUp(SDL_Keycode key) {
 	case SDLK_RETURN:
 		m_board.IO().releaseStart();
 		break;
+	default:
+		return false;
 	}
+	return true;
 }
 
 void Computer::initialiseAudio() {

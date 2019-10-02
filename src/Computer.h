@@ -26,7 +26,7 @@ public:
 	void lowerPOWER() final;
 	
 protected:
-	int fps() const noexcept final { return EightBit::GameBoy::Bus::FramesPerSecond; }
+	float fps() const noexcept final { return EightBit::GameBoy::Bus::FramesPerSecond; }
 	bool useVsync() const noexcept final { return m_configuration.getVsyncLocked(); }
 
 	int rasterWidth() const noexcept final { return EightBit::GameBoy::Display::RasterWidth; }
@@ -37,8 +37,8 @@ protected:
 
 	const uint32_t* pixels() const noexcept final;
 
-	void handleKeyDown(SDL_Keycode key) final;
-	void handleKeyUp(SDL_Keycode key) final;
+	bool handleKeyDown(SDL_Keycode key) final;
+	bool handleKeyUp(SDL_Keycode key) final;
 
 	void runRasterLines() final;
 	void runVerticalBlank() final;
