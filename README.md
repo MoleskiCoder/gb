@@ -22,9 +22,9 @@ Uses the Blargg Gb_Snd_Emu library. Sound is now the best part of this emulator!
 
 ## Obtaining source
 
-`git clone https://github.com/MoleskiCoder/gb.git`
-`cd gb`
-`git submodule update --init --recursive`
+1. `git clone https://github.com/MoleskiCoder/gb.git`
+1. `cd gb`
+1. `git submodule update --init --recursive`
 
 ## Building
 
