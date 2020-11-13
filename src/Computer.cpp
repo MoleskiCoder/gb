@@ -9,7 +9,7 @@ Computer::Computer(const Configuration& configuration)
 	m_audioOutputBuffer(AudioOutputBufferSize) {
 }
 
-void Computer::plug(const std::string& path) {
+void Computer::plug(std::string path) {
 	m_board.plug(path);
 }
 
@@ -48,8 +48,10 @@ void Computer::raisePOWER() {
 			m_lcd.loadObjectAttributes();
 			break;
 		case EightBit::GameBoy::IoRegisters::LcdStatusMode::TransferringDataToLcd:
-			m_lcd.render();
+			m_lcd.renderCurrentScanline();
 			break;
+		default:
+			assert(false);
 		}
 	});
 }
@@ -152,7 +154,7 @@ void Computer::endAudioframe() {
 	m_apu.end_frame();
 
 	if (m_apu.samples_avail() >= AudioOutputBufferSize) {
-		auto outputBuffer = &m_audioOutputBuffer[0];
+		auto outputBuffer = m_audioOutputBuffer.data();
 		const auto count = m_apu.read_samples(m_audioOutputBuffer);
 		m_audioQueue.write(outputBuffer, count);
 	}

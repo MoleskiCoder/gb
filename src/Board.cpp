@@ -10,13 +10,18 @@ Board::Board(const Configuration& configuration)
 void Board::initialise() {
 
 	if (m_configuration.isDebugMode()) {
+
 		CPU().ExecutingInstruction.connect([this] (const EightBit::GameBoy::LR35902&) {
-			if (IO().bootRomDisabled())
-				std::cerr
-					<< EightBit::GameBoy::Disassembler::state(CPU())
-					<< " "
-					<< m_disassembler.disassemble(CPU())
-					<< '\n';
+			if (IO().bootRomDisabled()) {
+				std::cerr << EightBit::GameBoy::Disassembler::state(CPU());
+				m_disassembled = m_disassembler.disassemble(CPU());
+			}
+		});
+
+		CPU().ExecutedInstruction.connect([this](const EightBit::GameBoy::LR35902&) {
+			if (IO().bootRomDisabled()) {
+				std::cerr << " CYC:" << CPU().cycles() << "\t" << m_disassembled << std::endl;
+			}
 		});
 	}
 
@@ -25,6 +30,8 @@ void Board::initialise() {
 		case EightBit::GameBoy::IoRegisters::BASE + EightBit::GameBoy::IoRegisters::SB:
 			std::cout << DATA();
 			break;
+		default:
+			break;
 		}
 	});
 
@@ -32,7 +39,7 @@ void Board::initialise() {
 	loadBootRom(romDirectory + "/DMG_ROM.bin");
 }
 
-void Board::plug(const std::string& path) {
+void Board::plug(std::string path) {
 	const auto romDirectory = m_configuration.getRomDirectory();
 	loadGameRom(romDirectory + "/" + path);
 }

@@ -18,9 +18,8 @@
 class Computer final : public Gaming::Game {
 public:
 	Computer(const Configuration& configuration);
-	~Computer() {}
 
-	void plug(const std::string& path);
+	void plug(std::string path);
 
 	void raisePOWER() final;
 	void lowerPOWER() final;
