@@ -21,8 +21,8 @@ public:
 
 	void plug(std::string path);
 
-	void raisePOWER() final;
-	void lowerPOWER() final;
+	void raisePOWER() noexcept final;
+	void lowerPOWER() noexcept final;
 	
 protected:
 	float fps() const noexcept final { return EightBit::GameBoy::Bus::FramesPerSecond; }

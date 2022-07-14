@@ -13,7 +13,7 @@ void Computer::plug(std::string path) {
 	m_board.plug(path);
 }
 
-void Computer::raisePOWER() {
+void Computer::raisePOWER() noexcept {
 
 	Gaming::Game::raisePOWER();
 
@@ -56,7 +56,7 @@ void Computer::raisePOWER() {
 	});
 }
 
-void Computer::lowerPOWER() {
+void Computer::lowerPOWER() noexcept {
 	m_board.lowerPOWER();
 	Gaming::Game::lowerPOWER();
 }
