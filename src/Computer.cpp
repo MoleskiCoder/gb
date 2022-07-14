@@ -32,7 +32,7 @@ void Computer::raisePOWER() noexcept {
 
 	m_board.WrittenByte.connect([this] (const EightBit::EventArgs&) {
 		const auto address = m_board.ADDRESS().word;
-		if (address > Gb_Apu::start_addr && address <= Gb_Apu::end_addr)
+		if (address >= Gb_Apu::start_addr && address <= Gb_Apu::end_addr)
 			m_apu.write_register(address, m_board.DATA());
 	});
 
